@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "motion/react";
+import DownloadCvButton from "./DownloadCvButton";
 import "./about.css";
 
 const aboutText =
@@ -96,6 +97,27 @@ export default function About() {
     [0, 1, 1, 0]
   );
 
+  // Button scroll animation: hidden while text is lighting up, emerges from below as text whitening finishes
+  const buttonOpacity = useTransform(
+    smoothProgress,
+    [0.68, 0.77, 0.88, 0.98],
+    [0, 1, 1, 0]
+  );
+  const buttonY = useTransform(
+    smoothProgress,
+    [0.68, 0.77, 0.88, 0.98],
+    [32, 0, 0, -20]
+  );
+  const buttonScale = useTransform(
+    smoothProgress,
+    [0.68, 0.77, 0.88, 0.98],
+    [0.92, 1, 1, 0.95]
+  );
+  const buttonPointerEvents = useTransform(
+    smoothProgress,
+    (val) => (val >= 0.68 && val <= 0.96 ? "auto" : "none")
+  );
+
   return (
     <div className="about-section font-geist" ref={containerRef} id="about">
       <div className="about-sticky">
@@ -164,6 +186,19 @@ export default function About() {
               );
             })}
           </div>
+
+          {/* Interactive Animated CV Download Button */}
+          <motion.div
+            className="about-cv-wrapper"
+            style={{
+              opacity: buttonOpacity,
+              y: buttonY,
+              scale: buttonScale,
+              pointerEvents: buttonPointerEvents,
+            }}
+          >
+            <DownloadCvButton />
+          </motion.div>
         </motion.div>
       </div>
     </div>

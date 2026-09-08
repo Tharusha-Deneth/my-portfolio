@@ -180,10 +180,12 @@ label {
 }
 
 /* 👇 3. FORM EKA SVG EKATA UDAIN PENNA MEKA ANIWARYEN ONI 👇 */
-.cSection:first-child {
+.cSection:first-child,
+.cSectionLeft {
   position: relative;
   z-index: 5; /* SVG eke z-index (1) ekata wada wadi wenna ooni */
-  width: 100%;
+  width: 361.2px;
+  max-width: 100%;
 }
 
   form {

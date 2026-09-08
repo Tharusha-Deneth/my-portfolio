@@ -27,6 +27,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  padding-left: 46px;
 }
 
 .hSection {
@@ -47,8 +48,21 @@
   color: white;
 }
 
+.hTitleAnimation {
+  display: inline-block;
+  white-space: nowrap;
+  margin-top: 8px;
+}
+
 .awards {
   width: 30%;
+}
+
+.awards h2 {
+  font-size: 26px;
+  margin-top: -19px;
+  padding-top: 0px;
+  padding-bottom: 0px;
 }
 
 .awards p {
@@ -60,6 +74,7 @@
 .awardList {
   display: flex;
   gap: 8px;
+  margin-top: -7px;
 }
 
 .awardList img {
@@ -296,7 +311,14 @@
   }
 
   .hTitle {
-    font-size: 48px;
+    font-size: clamp(32px, 8vw, 44px);
+    line-height: 1.2;
+  }
+
+  .hTitleAnimation {
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 30.7616px;
   }
 
   .awards {
@@ -316,9 +338,60 @@
     height: auto;
     z-index: 10;
   }
+
+  .contactButton {
+    width: 95px;
+    height: 95px;
+  }
+
+  .contactSvg {
+    width: 95px;
+    height: 95px;
+  }
+
+  .arrow {
+    width: 54px;
+    height: 54px;
+  }
+
+  .arrowSvg {
+    width: 32px;
+    height: 32px;
+  }
+
   .follow,
   .bubbleContainer,
   .certificate {
     display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .hTitle {
+    font-size: clamp(28px, 8vw, 34px);
+  }
+
+  .hTitleAnimation {
+    font-size: 30.7616px;
+  }
+
+  .contactButton {
+    width: 85px;
+    height: 85px;
+  }
+
+  .contactSvg {
+    width: 85px;
+    height: 85px;
+  }
+
+  .arrow {
+    width: 48px;
+    height: 48px;
+  }
+
+  .arrowSvg {
+    width: 28px;
+    height: 28px;
   }
 }

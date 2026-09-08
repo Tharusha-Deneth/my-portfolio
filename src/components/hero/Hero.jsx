@@ -100,7 +100,7 @@ const Hero = () => {
                 >
                     Hey There,
                     <br />
-                    <span>
+                    <span className="hTitleAnimation">
                         I&apos;m{" "}
                         <span style={{ color: "white" }}>
                             <TypeAnimation

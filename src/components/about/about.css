@@ -2,7 +2,7 @@
 .about-section {
   position: relative;
   width: 100%;
-  height: 220vh;
+  height: 250vh;
   background-color: #000000;
   font-family: 'Geist', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -129,6 +129,28 @@
   transition: filter 0.2s ease;
 }
 
+/* Targeted element style changes */
+div#about div.about-content-left > div.about-paragraph > span:nth-of-type(1) > span:nth-of-type(1),
+.about-paragraph > span:nth-of-type(1) > span:nth-of-type(1) {
+  width: 16.6875px;
+  height: 27.3375px;
+}
+
+div#about div.about-content-left > div.about-paragraph > span:nth-of-type(9) > span:nth-of-type(1),
+.about-paragraph > span:nth-of-type(9) > span:nth-of-type(1) {
+  height: 25.3375px;
+}
+
+div#about div.about-content-left > div.about-paragraph > span:nth-of-type(16) > span:nth-of-type(1),
+.about-paragraph > span:nth-of-type(16) > span:nth-of-type(1) {
+  height: 25.3375px;
+}
+
+div#about div.about-content-left > div.about-paragraph > span:nth-of-type(24) > span:nth-of-type(1),
+.about-paragraph > span:nth-of-type(24) > span:nth-of-type(1) {
+  height: 25.3375px;
+}
+
 @media (max-width: 768px) {
   .about-sticky {
     height: 100vh;
@@ -156,14 +178,12 @@
   }
 
   .about-video-bg {
-    object-position: 60% center;
-    opacity: 0.55;
+    object-position: 80% center;
+    opacity: 1;
   }
 
   .about-video-overlay {
-    background: 
-      linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 30%, rgba(0, 0, 0, 0.6) 70%, #000000 100%),
-      linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 100%);
+    opacity: 0;
   }
 
   .about-side-blur {
@@ -188,5 +208,335 @@
   .about-paragraph {
     font-size: 0.82rem;
     line-height: 1.55;
+  }
+}
+
+/* =========================================================
+   INTERACTIVE ANIMATED CV DOWNLOAD BUTTON
+   ========================================================= */
+
+.about-cv-wrapper {
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  z-index: 25;
+  will-change: transform, opacity;
+}
+
+.cv-btn-container {
+  position: relative;
+  display: inline-flex;
+}
+
+#cv-download-btn.cv-btn,
+.cv-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 222.85px;
+  min-width: 222.85px;
+  height: 46px;
+  padding-left: 15px;
+  padding-right: 14px;
+  margin-left: -2px;
+  margin-right: 0px;
+  border-radius: 0px;
+  border: 1.5px solid #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+  outline: none;
+  cursor: pointer;
+  overflow: hidden;
+  user-select: none;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 0 14px rgba(255, 255, 255, 0.08),
+    0 0 20px rgba(255, 255, 255, 0.15);
+  transition: 
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    background 0.35s ease;
+}
+
+/* Subtle inner transparent glass backdrop */
+.cv-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0px;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+  transition: background 0.3s ease;
+}
+
+.cv-btn:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 12px 35px rgba(0, 0, 0, 0.6),
+    inset 0 0 18px rgba(255, 255, 255, 0.2),
+    0 0 30px rgba(255, 255, 255, 0.35);
+}
+
+.cv-btn:hover::after {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Luminous rotating border sheen */
+.cv-btn-border-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 0px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.cv-btn-border-glow::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 220%;
+  height: 220%;
+  background: conic-gradient(
+    transparent 0deg,
+    transparent 120deg,
+    rgba(255, 255, 255, 0.85) 180deg,
+    transparent 240deg,
+    transparent 360deg
+  );
+  animation: cvRotateSheen 4.2s linear infinite;
+}
+
+@keyframes cvRotateSheen {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ambient sweeping white shimmer across the button face */
+.cv-btn-shimmer {
+  position: absolute;
+  top: 0;
+  left: -140%;
+  width: 80%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  transform: skewX(-25deg);
+  z-index: 2;
+  pointer-events: none;
+  animation: cvShimmerSweep 3.6s infinite ease-in-out;
+}
+
+@keyframes cvShimmerSweep {
+  0% {
+    left: -140%;
+  }
+  40%, 100% {
+    left: 170%;
+  }
+}
+
+/* Button default content layout */
+.cv-btn-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 12px;
+  color: #ffffff;
+}
+
+.cv-btn-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.cv-icon-down {
+  color: #ffffff;
+}
+
+.cv-btn-text {
+  font-family: 'Geist', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #ffffff;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.55);
+}
+
+/* Gathering Energy Orb */
+.cv-gather-orb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  margin-left: -8px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 
+    0 0 25px #ffffff,
+    0 0 50px rgba(255, 255, 255, 0.9);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Flight Track for the Flying Arrow */
+.cv-flight-track {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cv-speed-trail {
+  position: absolute;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.4), 
+    rgba(255, 255, 255, 0.95), 
+    #ffffff
+  );
+  border-radius: 9999px;
+  filter: drop-shadow(0 0 8px #ffffff);
+}
+
+.cv-rocket-arrow {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.cv-arrow-svg {
+  color: #ffffff;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 20px #38bdf8);
+}
+
+/* Success State */
+.cv-btn.success {
+  border-color: rgba(52, 211, 153, 0.7);
+  box-shadow: 
+    0 12px 35px rgba(0, 0, 0, 0.6),
+    0 0 35px rgba(52, 211, 153, 0.4),
+    inset 0 0 15px rgba(52, 211, 153, 0.2);
+}
+
+.cv-btn.success::after {
+  background: rgba(12, 24, 18, 0.9);
+}
+
+.cv-btn-success {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cv-success-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(52, 211, 153, 0.22);
+  border: 1.5px solid #34d399;
+  color: #34d399;
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.5);
+}
+
+.cv-check-svg {
+  color: #34d399;
+}
+
+.cv-success-text {
+  font-family: 'Geist', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #34d399;
+  text-shadow: 0 0 14px rgba(52, 211, 153, 0.6);
+}
+
+.cv-success-sub {
+  font-family: 'Geist', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 768px) {
+  .about-cv-wrapper {
+    margin-top: 22px;
+  }
+
+  .cv-btn {
+    min-width: 210px;
+    height: 48px;
+    padding: 0 20px;
+  }
+
+  .cv-btn-text {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-cv-wrapper {
+    margin-top: 18px;
+  }
+
+  .cv-btn {
+    min-width: 200px;
+    height: 46px;
+    padding: 0 18px;
+  }
+
+  .cv-btn-text {
+    font-size: 0.76rem;
+    letter-spacing: 0.07em;
+  }
+  
+  .cv-success-sub {
+    display: none;
   }
 }
