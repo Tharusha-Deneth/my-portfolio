@@ -264,3 +264,48 @@ label {
 .light .cSection:last-child {
   background-color: rgba(241, 245, 249, 0.6);
 }
+
+/* Left Section: holds form & 3D envelope */
+.cSectionLeft {
+  position: relative;
+  z-index: 15;
+}
+
+.contact.envelope-active .cSectionLeft {
+  position: relative;
+  z-index: 25;
+  filter: none !important;
+}
+
+/* Active Envelope Animation & Success Backdrop Blur */
+.contact-backdrop-blur-overlay {
+  position: absolute;
+  inset: -60px -80px;
+  background: rgba(5, 4, 12, 0.72);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  z-index: 2;
+  pointer-events: none;
+}
+
+[data-theme="light"] .contact-backdrop-blur-overlay {
+  background: rgba(248, 250, 252, 0.74);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+/* When envelope is animating, blur the underlying SVG illustration so the 3D envelope stands out sharp & vibrant */
+.contact.envelope-active .cSectionRight,
+.contact.envelope-active .cSection:last-child {
+  filter: blur(20px) !important;
+  opacity: 0.12 !important;
+  transition: filter 0.5s ease, opacity 0.5s ease;
+}
+
+.contact.envelope-active .cSectionRight svg,
+.contact.envelope-active .cSection:last-child svg {
+  filter: blur(22px) !important;
+  opacity: 0.12 !important;
+  transition: filter 0.5s ease, opacity 0.5s ease;
+}
+
