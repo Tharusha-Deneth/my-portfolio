@@ -1,0 +1,429 @@
+.tech-section {
+  position: relative;
+  width: 100%;
+  padding: 80px 0 100px 0;
+  background-color: #000000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+}
+
+/* Dual Side Blur Transition Overlays */
+.tech-side-blur {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(90px, 16vw, 240px);
+  pointer-events: none;
+  z-index: 10;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  will-change: opacity, transform;
+}
+
+.tech-side-blur-left {
+  left: 0;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.5) 45%, transparent 100%);
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 35%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 35%, transparent 100%);
+}
+
+.tech-side-blur-right {
+  right: 0;
+  transform-origin: right center;
+  background: linear-gradient(270deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.5) 45%, transparent 100%);
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 35%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 35%, transparent 100%);
+}
+
+/* Background Ambient Glow */
+.tech-bg-glow {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 70%);
+  pointer-events: none;
+  filter: blur(60px);
+  z-index: 1;
+}
+
+.tech-header {
+  text-align: center;
+  margin-bottom: 50px;
+  position: relative;
+  z-index: 2;
+  padding: 0 24px;
+}
+
+.tech-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #a855f7;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  margin-bottom: 14px;
+}
+
+.tech-title {
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin-bottom: 12px;
+  line-height: 1.1;
+}
+
+.tech-subtitle {
+  font-size: 15px;
+  color: #9ca3af;
+  max-width: 540px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Horizontal Rotating Carousel Tracks */
+.tech-carousel-wrapper {
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+}
+
+.tech-marquee-row {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.tech-marquee-content {
+  display: flex;
+  gap: 24px;
+  padding-right: 24px;
+}
+
+/* Row 1 scrolls left */
+.tech-scroll-left {
+  animation: scrollLeft 36s linear infinite;
+}
+
+/* Row 2 scrolls right */
+.tech-scroll-right {
+  animation: scrollRight 38s linear infinite;
+}
+
+.tech-carousel-wrapper:hover .tech-scroll-left,
+.tech-carousel-wrapper:hover .tech-scroll-right {
+  animation-play-state: paused;
+}
+
+@keyframes scrollLeft {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scrollRight {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Individual Tech Card - Matching the requested box card format */
+.tech-card {
+  width: 380px;
+  height: 200px;
+  background: #0d0d12;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tech-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  border-color: var(--accent-color, rgba(255, 255, 255, 0.25));
+  box-shadow: 0 14px 40px -10px var(--accent-glow, rgba(168, 85, 247, 0.25));
+}
+
+/* Card Left Side: Tech Stack Logo, Name & Tag */
+.tech-card-left {
+  width: 120px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.02);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+}
+
+.tech-logo-container {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.tech-card:hover .tech-logo-container {
+  transform: scale(1.1) rotate(-4deg);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.tech-logo-svg {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.tech-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f3f4f6;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.tech-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Card Right Side: Sample Code Mockup */
+.tech-card-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #08080c;
+  overflow: hidden;
+}
+
+.tech-code-header {
+  height: 28px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.tech-code-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.tech-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.tech-dot-red {
+  background: #ef4444;
+}
+
+.tech-dot-yellow {
+  background: #eab308;
+}
+
+.tech-dot-green {
+  background: #22c55e;
+}
+
+.tech-code-filename {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  color: #6b7280;
+  letter-spacing: 0.03em;
+}
+
+.tech-code-body {
+  padding: 12px 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #e2e8f0;
+  overflow: hidden;
+  white-space: pre;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: calc(100% - 28px);
+}
+
+/* Code Syntax Tokens */
+.syn-keyword {
+  color: #f472b6; /* pink */
+  font-weight: 600;
+}
+
+.syn-func {
+  color: #60a5fa; /* blue */
+}
+
+.syn-str {
+  color: #34d399; /* green */
+}
+
+.syn-type {
+  color: #fbbf24; /* amber */
+}
+
+.syn-prop {
+  color: #a78bfa; /* purple */
+}
+
+.syn-comment {
+  color: #6b7280; /* gray */
+  font-style: italic;
+}
+
+.syn-punct {
+  color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .tech-section {
+    padding: 50px 0 70px 0;
+  }
+
+  .tech-header {
+    margin-bottom: 34px;
+    padding: 0 16px;
+  }
+
+  .tech-title {
+    font-size: clamp(1.85rem, 6.8vw, 2.6rem);
+    margin-bottom: 10px;
+  }
+
+  .tech-subtitle {
+    font-size: 13.5px;
+    padding: 0 8px;
+    line-height: 1.5;
+  }
+
+  .tech-side-blur {
+    width: clamp(24px, 6vw, 44px);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .tech-carousel-wrapper {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .tech-card {
+    width: 295px;
+    height: 172px;
+  }
+  .tech-card-left {
+    width: 95px;
+    padding: 10px 8px;
+  }
+  .tech-logo-container {
+    width: 38px;
+    height: 38px;
+    margin-bottom: 6px;
+  }
+  .tech-logo-svg {
+    width: 22px;
+    height: 22px;
+  }
+  .tech-name {
+    font-size: 13px;
+  }
+  .tech-tag {
+    font-size: 8.5px;
+  }
+  .tech-code-filename {
+    font-size: 9.5px;
+  }
+  .tech-code-body {
+    font-size: 9.5px;
+    padding: 6px 10px;
+    line-height: 1.45;
+  }
+}
+
+@media (max-width: 420px) {
+  .tech-card {
+    width: 265px;
+    height: 158px;
+  }
+  .tech-card-left {
+    width: 86px;
+    padding: 8px 6px;
+  }
+  .tech-logo-container {
+    width: 34px;
+    height: 34px;
+  }
+  .tech-logo-svg {
+    width: 20px;
+    height: 20px;
+  }
+  .tech-name {
+    font-size: 12px;
+  }
+  .tech-tag {
+    font-size: 8px;
+    padding: 2px 5px;
+  }
+  .tech-code-body {
+    font-size: 8.5px;
+    padding: 5px 8px;
+    line-height: 1.4;
+  }
+  .tech-marquee-content {
+    gap: 14px;
+    padding-right: 14px;
+  }
+  .tech-carousel-wrapper {
+    gap: 16px;
+  }
+}

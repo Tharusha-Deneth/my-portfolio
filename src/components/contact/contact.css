@@ -1,0 +1,199 @@
+.contact {
+  height: 100%;
+  display: flex;
+  gap: 100px;
+  position: relative; 
+  overflow: hidden;
+}
+
+/* Dual Side Blur Wings for Contact */
+.contact-side-blur {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(80px, 15vw, 220px);
+  pointer-events: none;
+  z-index: 20;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  will-change: opacity, transform;
+}
+
+.contact-side-blur-left {
+  left: 0;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 30%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 30%, transparent 100%);
+}
+
+.contact-side-blur-right {
+  right: 0;
+  transform-origin: right center;
+  background: linear-gradient(270deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 30%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 30%, transparent 100%);
+}
+
+.cSection {
+  width: 50%;
+  height: 100%;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cSection:last-child {
+  background-color: rgba(2, 2, 45, 0.187);
+  margin: 50px 0px;
+  padding: 50px;
+  border-radius: 50% 0px;
+}
+
+form {
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 50px;
+  border-radius: 30px;
+  
+  /* Glass Effect */
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  
+  transition: transform 0.3s ease;
+}
+
+input,
+textarea {
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  color: white;
+  outline: none;
+  font-family: inherit;
+  transition: border 0.3s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+input:focus,
+textarea:focus {
+  border: 1px solid pink;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.formItem {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ddd;
+}
+
+.formButton {
+  background-color: #dd4c62;
+  color: white;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.formButton:hover {
+  background-color: #f05269;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 1280px) {
+  form {
+    width: 100%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .contact {
+    gap: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .contact {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+  }
+
+  .cSection {
+    width: 100%;
+  }
+
+/* 👇 1. SVG BACKGROUND CONTAINER EKA 👇 */
+.cSection:last-child {
+  position: absolute;
+  top: 0%;
+  left: 0%;
+  transform: translate(-50%, -50%) scale(1.2); 
+  width: 100%;
+  height: 100%;
+  
+  /* Background ekata yatin hira nowenna z-index eka 1 karanna */
+  z-index: 1; 
+  
+  background-color: transparent; 
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; 
+}
+
+/* 👇 2. ATHTHETAMA OPACITY EKA CONTROL KARANA THENA 👇 */
+.cSection:last-child svg {
+  /* Methanin opacity eka wenas karanna (0.1 idan 1 dakwa kemathi agayak) */
+  opacity: 1 !important; 
+  
+  /* Blur eka 1px hari 2px hari danna (10px dammoth okkoma makila yanawa) */
+  filter: blur(1px); 
+  
+  width: 85% !important;
+  height: auto !important;
+}
+
+/* 👇 3. FORM EKA SVG EKATA UDAIN PENNA MEKA ANIWARYEN ONI 👇 */
+.cSection:first-child {
+  position: relative;
+  z-index: 5; /* SVG eke z-index (1) ekata wada wadi wenna ooni */
+  width: 100%;
+}
+
+  form {
+    /* Form eka depeththata adinna width eka 95% kala (100% dunnoth aine border eka kapewi) */
+    width: 100%; 
+    
+    /* Udin 40px gap ekak dila form eka pahalata gaththa. Thawa yata yanna ooninam me 40px wadi karanna */
+    margin: 100px auto 0 auto; 
+    
+    padding: 40px 20px; 
+    box-sizing: border-box; /* Padding nisa form eka eliyata yana eka nawaththanna meka awashyai */
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Tharusha Deneth Portfolio",
+  "description": "Interactive 3D developer portfolio showcasing full-stack projects, scroll-animated about section with 3D elements, animated rotating tech stack cards, and contact information.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
