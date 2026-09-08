@@ -300,6 +300,18 @@
     margin-top: -60px;
   }
 
+  .hImg {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    margin: 0;
+    margin-left: 0;
+  }
+
+  .hImg img {
+    padding-left: 0;
+  }
+
   .hSection {
     width: 100%;
   }
