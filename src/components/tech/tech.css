@@ -427,3 +427,100 @@
     gap: 16px;
   }
 }
+
+/* ================= TECH STACK LIGHT THEME ================= */
+[data-theme="light"] .tech-section,
+.light .tech-section {
+  background-color: #f8fafc;
+}
+
+[data-theme="light"] .tech-side-blur-left,
+.light .tech-side-blur-left {
+  background: linear-gradient(90deg, rgba(248, 250, 252, 0.95) 0%, rgba(248, 250, 252, 0.5) 45%, transparent 100%);
+}
+
+[data-theme="light"] .tech-side-blur-right,
+.light .tech-side-blur-right {
+  background: linear-gradient(270deg, rgba(248, 250, 252, 0.95) 0%, rgba(248, 250, 252, 0.5) 45%, transparent 100%);
+}
+
+[data-theme="light"] .tech-badge,
+.light .tech-badge {
+  color: #be123c;
+  background: rgba(225, 29, 72, 0.08);
+  border-color: rgba(225, 29, 72, 0.25);
+}
+
+[data-theme="light"] .tech-title,
+.light .tech-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .tech-subtitle,
+.light .tech-subtitle {
+  color: #475569;
+}
+
+[data-theme="light"] .tech-card,
+.light .tech-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .tech-card:hover,
+.light .tech-card:hover {
+  box-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.14);
+}
+
+[data-theme="light"] .tech-card-left,
+.light .tech-card-left {
+  background: rgba(0, 0, 0, 0.02);
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .tech-logo-container,
+.light .tech-logo-container {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .tech-name,
+.light .tech-name {
+  color: #0f172a;
+}
+
+[data-theme="light"] .tech-tag,
+.light .tech-tag {
+  color: #475569;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .tech-card-right,
+.light .tech-card-right {
+  background: #f8fafc;
+}
+
+[data-theme="light"] .tech-code-header,
+.light .tech-code-header {
+  background: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .tech-code-filename,
+.light .tech-code-filename {
+  color: #64748b;
+}
+
+[data-theme="light"] .tech-code-body,
+.light .tech-code-body {
+  color: #334155;
+}
+
+[data-theme="light"] .tech-card svg[fill="#FFFFFF"],
+.light .tech-card svg[fill="#FFFFFF"],
+[data-theme="light"] .tech-card svg[fill="#ffffff"],
+.light .tech-card svg[fill="#ffffff"] {
+  fill: #0f172a;
+}
+

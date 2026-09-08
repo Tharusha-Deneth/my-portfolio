@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "motion/react";
 import DownloadCvButton from "./DownloadCvButton";
+import { useTheme } from "../../context/ThemeContext";
 import "./about.css";
 
 const aboutText =
@@ -8,14 +9,21 @@ const aboutText =
 
 const words = aboutText.split(" ");
 
-// Individual word component that transitions from dark gray to bright glowing white on scroll
-const ScrollWord = ({ word, range, progress }) => {
-  const opacity = useTransform(progress, range, [0.22, 1]);
-  const color = useTransform(progress, range, ["#52525b", "#ffffff"]);
-  const textShadow = useTransform(progress, range, [
-    "0 0 0px rgba(255, 255, 255, 0)",
-    "0 0 10px rgba(255, 255, 255, 0.55)",
-  ]);
+// Individual word component that transitions from muted to bright on scroll
+const ScrollWord = ({ word, range, progress, isLight }) => {
+  const opacity = useTransform(progress, range, [isLight ? 0.4 : 0.22, 1]);
+  const color = useTransform(
+    progress, 
+    range, 
+    isLight ? ["#94a3b8", "#0f172a"] : ["#52525b", "#ffffff"]
+  );
+  const textShadow = useTransform(
+    progress, 
+    range, 
+    isLight 
+      ? ["0 0 0px rgba(0, 0, 0, 0)", "0 0 8px rgba(15, 23, 42, 0.15)"]
+      : ["0 0 0px rgba(255, 255, 255, 0)", "0 0 10px rgba(255, 255, 255, 0.55)"]
+  );
 
   return (
     <span className="about-word-wrap">
@@ -36,6 +44,8 @@ const ScrollWord = ({ word, range, progress }) => {
 
 export default function About() {
   const containerRef = useRef(null);
+  const { theme } = useTheme();
+  const isLight = theme === "light";
 
   // Track scroll position through the about section track
   const { scrollYProgress } = useScroll({
@@ -182,6 +192,7 @@ export default function About() {
                   word={word}
                   range={[start, end]}
                   progress={smoothProgress}
+                  isLight={isLight}
                 />
               );
             })}

@@ -199,3 +199,68 @@ label {
     box-sizing: border-box; /* Padding nisa form eka eliyata yana eka nawaththanna meka awashyai */
   }
 }
+
+/* ================= CONTACT LIGHT THEME ================= */
+[data-theme="light"] form,
+.light form {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] input,
+.light input,
+[data-theme="light"] textarea,
+.light textarea {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
+
+[data-theme="light"] input::placeholder,
+.light input::placeholder,
+[data-theme="light"] textarea::placeholder,
+.light textarea::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme="light"] input:focus,
+.light input:focus,
+[data-theme="light"] textarea:focus,
+.light textarea:focus {
+  border-color: #e11d48;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.14);
+}
+
+[data-theme="light"] label,
+.light label {
+  color: #334155;
+}
+
+[data-theme="light"] .formButton,
+.light .formButton {
+  background-color: #e11d48;
+  color: #ffffff;
+  box-shadow: 0 8px 24px -4px rgba(225, 29, 72, 0.35);
+}
+
+[data-theme="light"] .formButton:hover,
+.light .formButton:hover {
+  background-color: #be123c;
+}
+
+[data-theme="light"] .contact-side-blur-left,
+.light .contact-side-blur-left {
+  background: linear-gradient(90deg, rgba(248, 250, 252, 0.95) 0%, rgba(248, 250, 252, 0.4) 50%, transparent 100%);
+}
+
+[data-theme="light"] .contact-side-blur-right,
+.light .contact-side-blur-right {
+  background: linear-gradient(270deg, rgba(248, 250, 252, 0.95) 0%, rgba(248, 250, 252, 0.4) 50%, transparent 100%);
+}
+
+[data-theme="light"] .cSection:last-child,
+.light .cSection:last-child {
+  background-color: rgba(241, 245, 249, 0.6);
+}

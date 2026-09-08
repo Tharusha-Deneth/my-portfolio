@@ -102,7 +102,7 @@ const Hero = () => {
                     <br />
                     <span className="hTitleAnimation">
                         I&apos;m{" "}
-                        <span style={{ color: "white" }}>
+                        <span className="hTitleHighlight">
                             <TypeAnimation
                                 sequence={[
                                     "Tharusha!",
@@ -144,7 +144,7 @@ const Hero = () => {
                         duration: 2.4,
                         ease: "easeInOut",
                     }}
-                    href="#skills"
+                    href="#about"
                     className="scroll"
                 >
                     <svg
@@ -153,10 +153,11 @@ const Hero = () => {
                         viewBox="0 0 24 24"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
+                        className="scrollSvg"
                     >
                         <path
                             d="M5 9C5 5.13401 8.13401 2 12 2C15.866 2 19 5.13401 19 9V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V9Z"
-                            stroke="white"
+                            stroke="currentColor"
                             strokeWidth="1.2"
                         />
                         <motion.path
@@ -167,7 +168,7 @@ const Hero = () => {
                                 ease: "easeInOut",
                             }}
                             d="M12 5V8"
-                            stroke="white"
+                            stroke="currentColor"
                             strokeWidth="1.5"
                             strokeLinecap="round"
                         />

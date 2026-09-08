@@ -6,6 +6,9 @@
 import { lazy, Suspense, useState } from "react";
 import LazyLoad from "react-lazyload";
 import SplashScreen from "./components/splash/SplashScreen";
+import ThemeToggle from "./components/theme/ThemeToggle";
+import ThemeBlast from "./components/theme/ThemeBlast";
+import { ThemeProvider } from "./context/ThemeContext";
 
 const Hero = lazy(() => import("./components/hero/Hero"));
 const About = lazy(() => import("./components/about/About"));
@@ -17,7 +20,10 @@ const App = () => {
   const [showSplash, setShowSplash] = useState(true);
 
   return (
-    <>
+    <ThemeProvider>
+      <ThemeBlast />
+      <ThemeToggle />
+
       {showSplash && (
         <SplashScreen onFinish={() => setShowSplash(false)} />
       )}
@@ -53,7 +59,7 @@ const App = () => {
           </LazyLoad>
         </Suspense>
       </div>
-    </>
+    </ThemeProvider>
   );
 };
 

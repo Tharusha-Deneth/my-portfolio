@@ -42,10 +42,22 @@
   margin-top: 50px;
   font-size: 100px;
   color: #fba4bc;
+  transition: color 0.35s ease;
 }
 
 .hTitle span {
   color: white;
+  transition: color 0.35s ease;
+}
+
+.hTitleHighlight {
+  color: white;
+  transition: color 0.35s ease;
+}
+
+.scrollSvg {
+  color: white;
+  transition: color 0.35s ease;
 }
 
 .hTitleAnimation {
@@ -407,3 +419,100 @@
     height: 28px;
   }
 }
+
+/* ================= HERO LIGHT THEME ================= */
+[data-theme="light"] .hero,
+.light .hero {
+  color: #0f172a;
+}
+
+[data-theme="light"] .hTitle,
+.light .hTitle {
+  color: #e11d48;
+}
+
+[data-theme="light"] .hTitle span,
+.light .hTitle span,
+[data-theme="light"] .hTitleHighlight,
+.light .hTitleHighlight {
+  color: #0f172a;
+}
+
+[data-theme="light"] .awards h2,
+.light .awards h2 {
+  color: #0f172a;
+}
+
+[data-theme="light"] .awards p,
+.light .awards p {
+  color: #475569;
+}
+
+[data-theme="light"] .awardList img,
+.light .awardList img {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .scrollSvg,
+.light .scrollSvg {
+  color: #0f172a;
+}
+
+[data-theme="light"] .follow,
+.light .follow {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .follow img,
+.light .follow img {
+  filter: brightness(0.2);
+}
+
+[data-theme="light"] .followText,
+.light .followText {
+  background-color: #e11d48;
+  color: #ffffff;
+}
+
+[data-theme="light"] .bubble,
+.light .bubble {
+  background-color: #ffffff;
+  color: #1e293b;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .bubble::after,
+.light .bubble::after {
+  border-left-color: #ffffff;
+}
+
+[data-theme="light"] .certificate,
+.light .certificate {
+  color: #334155;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 10px 14px;
+}
+
+[data-theme="light"] .contactSvg circle,
+.light .contactSvg circle {
+  fill: #fecdd3;
+}
+
+[data-theme="light"] .circleText,
+.light .circleText {
+  fill: #0f172a;
+}
+
+[data-theme="light"] .arrowSvg,
+.light .arrowSvg {
+  stroke: #0f172a;
+}
+
