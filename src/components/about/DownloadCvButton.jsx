@@ -4,7 +4,7 @@ import { FileDown } from "lucide-react";
 import confetti from "canvas-confetti";
 import { CV_BASE64 } from "../../assets/cvBase64.js";
 
-// Helper to trigger the real CV PDF download directly from binary bytes
+// Helper to trigger the real CV PDF download directly from binary bytes (new_cv.pdf)
 function downloadRealCvPdf() {
   try {
     const binaryString = window.atob(CV_BASE64);
@@ -29,7 +29,7 @@ function downloadRealCvPdf() {
   } catch (err) {
     console.error("Base64 download error, fallback to static file:", err);
     const link = document.createElement("a");
-    link.href = "/th.pdf";
+    link.href = "/new_cv.pdf";
     link.download = "Tharusha_Deneth_CV.pdf";
     document.body.appendChild(link);
     link.click();
@@ -52,7 +52,7 @@ export default function DownloadCvButton() {
       // Step 2: Morphs into arrow and accelerates left-to-right
       setStatus("flying");
 
-      // Trigger the real CV PDF download from Tharusha's actual th.pdf
+      // Trigger the real CV PDF download from Tharusha's actual new_cv.pdf
       downloadRealCvPdf();
     }, 320);
 

@@ -7,14 +7,16 @@ import { useTheme } from "../../context/ThemeContext";
 const items = [
     {
         id: 1,
-        img: "/p1.png",
-        title: "Full Stack Cinema Website",
-        desc: "A feature-packed cinema and streaming web application with an extensive movie catalog, instant trailers, and personalized watchlists.",
-        link: "https://cineflixtime.vercel.app/",
-        category: "Cinema & Streaming",
-        tags: ["React", "Node.js", "Express", "Streaming API"],
-        accent: "#c084fc",
-        accentGlow: "rgba(192, 132, 252, 0.45)",
+        img: "/p22.png",
+        title: "Hospital Management System",
+        desc: "A secure desktop application to streamline patient registration, doctor appointments, and professional JasperReports generation.",
+        link: "#", // මෙතනට ඔයාගේ HMS GitHub ලින්ක් එක දාන්න
+        category: "Desktop Application",
+        tags: ["Java Swing", "JDBC", "MySQL", "JasperReports"],
+        accent: "#f43f5e",
+        accentGlow: "rgba(244, 63, 94, 0.45)",
+        hasLivePreview: false,
+        hasButton: false,
     },
     {
         id: 2,
@@ -26,6 +28,8 @@ const items = [
         tags: ["Full Stack", "Booking Engine", "Tailwind", "Dashboard"],
         accent: "#f43f5e",
         accentGlow: "rgba(244, 63, 94, 0.45)",
+        hasLivePreview: true,
+        hasButton: true,
     },
     {
         id: 3,
@@ -34,31 +38,37 @@ const items = [
         desc: "A scalable luxury hospitality reservation platform with live room availability tracking, rate tiers, and custom admin panel.",
         link: "https://p-aurelia.netlify.app/",
         category: "Hospitality & Travel",
-        tags: ["React", "Reservation API", "Admin Suite", "MongoDB"],
+        tags: ["Html", "css", "Admin"],
         accent: "#38bdf8",
         accentGlow: "rgba(56, 189, 248, 0.45)",
+        hasLivePreview: true,
+        hasButton: true,
     },
     {
         id: 4,
-        img: "/p4.png",
-        title: "Personal Animation Portfolio",
-        desc: "An immersive creative portfolio featuring responsive 3D WebGL scenes, interactive Canvas elements, and physics-driven transitions.",
-        link: "https://portfolio-tharusha.netlify.app/",
-        category: "Creative 3D / WebGL",
-        tags: ["Three.js", "React", "3D Canvas", "Motion"],
-        accent: "#2dd4bf",
-        accentGlow: "rgba(45, 212, 191, 0.45)",
+        img: "/p11.png",
+        title: "LUMIERE - Fashion E-Commerce",
+        desc: "A full-stack fashion e-commerce web application featuring secure OTP email verification and PayHere payment gateway integration.",
+        link: "#", // මෙතනට ඔයාගේ LUMIERE GitHub ලින්ක් එක දාන්න
+        category: "Enterprise Web App",
+        tags: ["Java", "Hibernate", "MySQL", "JAX-RS"],
+        accent: "#c084fc",
+        accentGlow: "rgba(192, 132, 252, 0.45)",
+        hasLivePreview: false,
+        hasButton: false,
     },
     {
         id: 5,
-        img: "/p5.png",
-        title: "Online File Converting Project",
-        desc: "High-speed multi-format utility platform enabling users to seamlessly convert videos, audio, documents, and images on the fly.",
-        link: "https://fromat-any-document.netlify.app/",
-        category: "Utility Platform",
-        tags: ["Next.js", "FFmpeg", "WebAssembly", "Cloud API"],
-        accent: "#e879f9",
-        accentGlow: "rgba(232, 121, 249, 0.45)",
+        img: "/p33.png",
+        title: "TechNova - Tech E-Commerce",
+        desc: "A responsive premium tech trading platform featuring Two-Factor Authentication, live auto-suggest search, and a dark glassmorphism UI.",
+        link: "#", // මෙතනට ඔයාගේ TechNova GitHub ලින්ක් එක දාන්න
+        category: "Web Development",
+        tags: ["PHP", "JavaScript", "AJAX", "MySQL"],
+        accent: "#38bdf8",
+        accentGlow: "rgba(56, 189, 248, 0.45)",
+        hasLivePreview: true,
+        hasButton: true,
     },
 ];
 
@@ -256,10 +266,12 @@ const ListItem = ({ item, index, total, smoothProgress, viewportWidth, isActive 
                     <div className="pImgGloss" />
 
                     {/* Live indicator overlay badge */}
-                    <div className="pImgBadge">
-                        <span className="pImgBadgeDot" style={{ background: item.accent, boxShadow: `0 0 8px ${item.accent}` }} />
-                        <span>LIVE PREVIEW</span>
-                    </div>
+                    {item.hasLivePreview !== false && (
+                        <div className="pImgBadge">
+                            <span className="pImgBadgeDot" style={{ background: item.accent, boxShadow: `0 0 8px ${item.accent}` }} />
+                            <span>LIVE PREVIEW</span>
+                        </div>
+                    )}
                 </div>
             </motion.div>
 
@@ -325,23 +337,27 @@ const ListItem = ({ item, index, total, smoothProgress, viewportWidth, isActive 
                 </motion.p>
                 
                 {/* View Project Action Button */}
-                <motion.button 
-                    variants={btnVariants} 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(item.link, "_blank", "noopener,noreferrer");
-                    }}
-                    className="pBtn"
-                    style={{
-                        background: "#fbcfe8",
-                        boxShadow: `0 10px 28px -4px rgba(251, 207, 232, 0.4), 0 0 20px ${item.accentGlow}`,
-                    }}
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.96 }}
-                >
-                    <span>View Project</span>
-                    <ArrowUpRight className="pBtnIcon" />
-                </motion.button>
+                {item.hasButton !== false && (
+                    <motion.button 
+                        variants={btnVariants} 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (item.link && item.link !== "#") {
+                                window.open(item.link, "_blank", "noopener,noreferrer");
+                            }
+                        }}
+                        className="pBtn"
+                        style={{
+                            background: "#fbcfe8",
+                            boxShadow: `0 10px 28px -4px rgba(251, 207, 232, 0.4), 0 0 20px ${item.accentGlow}`,
+                        }}
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.96 }}
+                    >
+                        <span>View Project</span>
+                        <ArrowUpRight className="pBtnIcon" />
+                    </motion.button>
+                )}
             </motion.div>
         </div>
     );
