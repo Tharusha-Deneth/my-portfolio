@@ -3,7 +3,7 @@ import "./hero.css";
 import Speech from "./Speech";
 import { motion, useInView } from "motion/react";
 import Shape from "./Shape";
-import { Suspense, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { TypeAnimation } from "react-type-animation";
 
 // Scroll animation variants for left and right sides
@@ -80,6 +80,21 @@ const bgVariants = {
 const Hero = () => {
     const heroRef = useRef(null);
     const isInView = useInView(heroRef, { margin: "0px", once: false });
+
+    const [isMobile, setIsMobile] = useState(() => {
+        if (typeof window !== "undefined") {
+            return window.innerWidth <= 768;
+        }
+        return false;
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     return (
         <div 
@@ -180,9 +195,9 @@ const Hero = () => {
             <div className="hSection right">
                 {/* FOLLOW */}
                 <motion.div
-                    variants={rightSideVariants}
-                    initial="initial"
-                    animate={isInView ? "animate" : "initial"}
+                    variants={isMobile ? undefined : rightSideVariants}
+                    initial={isMobile ? false : "initial"}
+                    animate={isMobile ? false : (isInView ? "animate" : "initial")}
                     className="follow"
                 >
                     <a href="/">

@@ -460,6 +460,20 @@ const Portfolio = () => {
                 <div className="p-edge-vignette p-edge-left" />
                 <div className="p-edge-vignette p-edge-right" />
 
+                {/* Top Status Kicker Bar */}
+                <div className="pTopBar">
+                    <div className="pKickerPill">
+                        <span 
+                            className="pKickerDot" 
+                            style={{ 
+                                background: items[activeIdx]?.accent || "#c084fc", 
+                                boxShadow: `0 0 10px ${items[activeIdx]?.accent || "#c084fc"}` 
+                            }} 
+                        />
+                        <span>04 / MY SOFTWARE PROJECTS</span>
+                    </div>
+                </div>
+
                 {/* Horizontal Project List */}
                 <motion.div 
                     className="pList" 

@@ -13,6 +13,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 const Hero = lazy(() => import("./components/hero/Hero"));
 const About = lazy(() => import("./components/about/About"));
 const TechStack = lazy(() => import("./components/tech/TechStack"));
+const CreativeShowcase = lazy(() => import("./components/creative/CreativeShowcase"));
 const Portfolio = lazy(() => import("./components/portfolio/Portfolio"));
 const Contact = lazy(() => import("./components/contact/Contact"));
 
@@ -44,6 +45,11 @@ const App = () => {
         <Suspense fallback={"loading..."}>
           <LazyLoad height={"600px"} offset={300} once={true}>
             <TechStack />
+          </LazyLoad>
+        </Suspense>
+        <Suspense fallback={"loading..."}>
+          <LazyLoad height={"100vh"} offset={300} once={true}>
+            <CreativeShowcase />
           </LazyLoad>
         </Suspense>
         <Suspense fallback={"loading..."}>

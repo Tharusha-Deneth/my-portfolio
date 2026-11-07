@@ -354,39 +354,121 @@
   }
 
   .hSection.right {
-    position: absolute;
-    bottom: -20px; 
-    right: 8px; 
+    position: static;
     justify-content: flex-end;
     width: auto;
     height: auto;
+  }
+
+  .contactLink {
+    position: absolute;
+    bottom: -20px; 
+    right: 8px; 
+    margin-bottom: 0;
     z-index: 10;
   }
 
-  .contactButton {
-    width: 95px;
-    height: 95px;
-  }
-
-  .contactSvg {
-    width: 95px;
-    height: 95px;
-  }
-
-  .arrow {
-    width: 54px;
-    height: 54px;
-  }
-
-  .arrowSvg {
-    width: 32px;
-    height: 32px;
-  }
-
-  .follow,
   .bubbleContainer,
   .certificate {
     display: none;
+  }
+
+  /* ================= MOBILE SOCIAL MEDIA HANGING FLAG ================= */
+  .follow {
+    display: flex !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 16px !important;
+    z-index: 60 !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 9px !important;
+    padding: 10px 7px 12px 7px !important;
+    background-color: #2f204e !important;
+    border-radius: 0 0 10px 10px !important;
+    border-top: none !important;
+    box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.55), 0 0 16px rgba(221, 76, 98, 0.25) !important;
+    transform-origin: 50% 0% !important;
+    transform-style: preserve-3d !important;
+    perspective: 700px !important;
+    will-change: transform, opacity !important;
+    animation: flagMobileDropIn 1.15s cubic-bezier(0.22, 1, 0.36, 1) both,
+               flagMobileClothWave 4.6s ease-in-out 1.15s infinite !important;
+  }
+
+  /* Cloth ripple sheen reflecting light and shadow across the flag */
+  .follow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      168deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.22) 22%,
+      rgba(0, 0, 0, 0.3) 48%,
+      rgba(255, 255, 255, 0.24) 70%,
+      rgba(0, 0, 0, 0.26) 88%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 150% 300%;
+    mix-blend-mode: overlay;
+    animation: flagClothRippleShine 4.6s ease-in-out infinite;
+  }
+
+  .follow a {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .follow img {
+    width: 15px !important;
+    height: 15px !important;
+    object-fit: contain;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .follow a:active img {
+    transform: scale(1.22);
+  }
+
+  .followTextContainer {
+    width: 16px !important;
+    height: 16px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 5;
+  }
+
+  .followText {
+    background-color: #dd4c62 !important;
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.12em !important;
+    rotate: 90deg !important;
+    transform-origin: left top !important;
+    transform: translateY(-16px) !important;
+    padding: 0 7px !important;
+    height: 16px !important;
+    line-height: 16px !important;
+    width: 75.95px !important;
+    margin-left: 57px !important;
+    margin-right: 0px !important;
+    margin-bottom: 15px !important;
+    display: flex !important;
+    align-items: center !important;
+    border-bottom-right-radius: 7px !important;
+    border-bottom-left-radius: 4px !important;
+    white-space: nowrap !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(221, 76, 98, 0.35) !important;
+    animation: followTextFlutter 4.6s ease-in-out 1.3s infinite !important;
   }
 }
 
@@ -514,5 +596,108 @@
 [data-theme="light"] .arrowSvg,
 .light .arrowSvg {
   stroke: #0f172a;
+}
+
+/* ================= KEYFRAMES: MOBILE HANGING FLAG PHYSICS ================= */
+@keyframes flagMobileDropIn {
+  0% {
+    transform: translateY(-135%) perspective(700px) rotateX(68deg) scaleY(0.7);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(8px) perspective(700px) rotateX(-14deg) scaleY(1.04);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(-4px) perspective(700px) rotateX(6deg) scaleY(0.98);
+  }
+  85% {
+    transform: translateY(2px) perspective(700px) rotateX(-2deg) scaleY(1.01);
+  }
+  100% {
+    transform: translateY(0) perspective(700px) rotateX(0deg) scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes flagMobileClothWave {
+  0% {
+    transform: perspective(700px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) skewY(0deg);
+  }
+  12% {
+    transform: perspective(700px) rotateX(4.5deg) rotateY(-8.5deg) rotateZ(1.3deg) skewY(-1.8deg);
+  }
+  24% {
+    transform: perspective(700px) rotateX(-2.5deg) rotateY(10.5deg) rotateZ(-1.2deg) skewY(2.4deg);
+  }
+  38% {
+    transform: perspective(700px) rotateX(5.2deg) rotateY(-6.5deg) rotateZ(0.9deg) skewY(-1.3deg);
+  }
+  52% {
+    transform: perspective(700px) rotateX(-4deg) rotateY(9.5deg) rotateZ(-1.6deg) skewY(2.1deg);
+  }
+  66% {
+    transform: perspective(700px) rotateX(3.2deg) rotateY(-7.5deg) rotateZ(1.2deg) skewY(-1.6deg);
+  }
+  80% {
+    transform: perspective(700px) rotateX(-2.2deg) rotateY(5.5deg) rotateZ(-0.7deg) skewY(1.1deg);
+  }
+  100% {
+    transform: perspective(700px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) skewY(0deg);
+  }
+}
+
+@keyframes flagClothRippleShine {
+  0% {
+    background-position: 0% 0%;
+    opacity: 0.3;
+  }
+  25% {
+    background-position: 50% 50%;
+    opacity: 0.75;
+  }
+  50% {
+    background-position: 100% 100%;
+    opacity: 0.45;
+  }
+  75% {
+    background-position: 50% 50%;
+    opacity: 0.7;
+  }
+  100% {
+    background-position: 0% 0%;
+    opacity: 0.3;
+  }
+}
+
+@keyframes followTextFlutter {
+  0% {
+    transform: translateY(-16px) rotate(90deg) rotateY(0deg) skewX(0deg);
+  }
+  18% {
+    transform: translateY(-16px) rotate(90deg) rotateY(-11deg) skewX(-2.2deg);
+  }
+  36% {
+    transform: translateY(-16px) rotate(90deg) rotateY(13deg) skewX(2.8deg);
+  }
+  54% {
+    transform: translateY(-16px) rotate(90deg) rotateY(-9deg) skewX(-2deg);
+  }
+  72% {
+    transform: translateY(-16px) rotate(90deg) rotateY(8deg) skewX(1.7deg);
+  }
+  100% {
+    transform: translateY(-16px) rotate(90deg) rotateY(0deg) skewX(0deg);
+  }
+}
+
+@media (max-width: 768px) {
+  [data-theme="light"] .follow,
+  .light .follow {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-top: none !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 0 16px rgba(225, 29, 72, 0.15) !important;
+  }
 }
 
