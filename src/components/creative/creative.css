@@ -23,6 +23,73 @@
   box-sizing: border-box;
 }
 
+/* ================= RGB CHROMATIC GLOWING DIVIDER LINES ================= */
+.rgb-glow-divider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 3.5px;
+  z-index: 55;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.rgb-glow-top {
+  top: 0;
+}
+
+.rgb-glow-bottom {
+  bottom: 0;
+}
+
+.rgb-glow-line {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    #ff0055 0%,
+    #7928ca 15%,
+    #0070f3 30%,
+    #00dfd8 45%,
+    #42b883 60%,
+    #ffaa00 75%,
+    #ff0055 90%,
+    #7928ca 100%
+  );
+  background-size: 250% 100%;
+  animation: rgbFlowAnimation 4.5s linear infinite;
+  box-shadow: 0 0 16px rgba(0, 223, 216, 0.85), 0 0 32px rgba(121, 40, 202, 0.65), 0 0 50px rgba(255, 0, 85, 0.45);
+}
+
+.rgb-glow-aura {
+  position: absolute;
+  inset: -8px 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 0, 85, 0.6),
+    rgba(121, 40, 202, 0.6),
+    rgba(0, 112, 243, 0.6),
+    rgba(0, 223, 216, 0.6),
+    rgba(66, 184, 131, 0.6),
+    rgba(255, 170, 0, 0.6),
+    rgba(255, 0, 85, 0.6)
+  );
+  background-size: 250% 100%;
+  animation: rgbFlowAnimation 4.5s linear infinite;
+  filter: blur(10px);
+  opacity: 0.85;
+}
+
+@keyframes rgbFlowAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 250% 50%;
+  }
+}
+
 .creative-stage-screen {
   position: relative;
   min-height: 100vh;
@@ -1012,32 +1079,140 @@
   cursor: pointer;
 }
 
-.secret-preview-strip {
+/* Big High-Res Artwork Preview Stage inside Modal */
+.modal-artwork-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 200px;
+  max-height: 270px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #090614;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: center;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.85), 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
 }
 
-.secret-thumb-img {
-  width: 60px;
-  height: 45px;
-  border-radius: 8px;
-  object-fit: cover;
+.modal-artwork-stage-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
-.secret-change-btn {
+/* Floating Format Badge (AI, PSD, SVG, PNG, JPG) */
+.modal-format-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.modal-format-badge.ai {
+  background: rgba(255, 154, 0, 0.22);
+  border: 1px solid rgba(255, 154, 0, 0.65);
+  color: #ff9a00;
+  box-shadow: 0 0 12px rgba(255, 154, 0, 0.3);
+}
+
+.modal-format-badge.psd {
+  background: rgba(56, 189, 248, 0.22);
+  border: 1px solid rgba(56, 189, 248, 0.65);
+  color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+}
+
+.modal-format-badge.svg {
+  background: rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(245, 158, 11, 0.65);
+  color: #f59e0b;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+.modal-format-badge.png,
+.modal-format-badge.jpg,
+.modal-format-badge.webp {
+  background: rgba(192, 132, 252, 0.22);
+  border: 1px solid rgba(192, 132, 252, 0.65);
+  color: #c084fc;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.3);
+}
+
+/* Bottom Overlay Bar with File Info & Replace Button */
+.modal-stage-overlay-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 14px;
+  background: linear-gradient(0deg, rgba(8, 5, 17, 0.95) 0%, rgba(8, 5, 17, 0.65) 75%, transparent 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 5;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-stage-file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.modal-stage-filename {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+}
+
+.modal-stage-filesize {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.modal-stage-replace-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: #ffffff;
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.modal-stage-replace-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .secret-inputs-grid {

@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import "./creative.css";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight, Sparkles, Eye, Edit2, Waves } from "lucide-react";
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Sparkles, 
+  Eye, 
+  Waves 
+} from "lucide-react";
 import ArtworkModal from "./ArtworkModal";
 import SecretAdminModal from "./SecretAdminModal";
 import { getStoredArtworks } from "./creativeData";
@@ -47,8 +53,10 @@ export default function CreativeShowcase() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [selectedArtwork, setSelectedArtwork] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Admin Modal state
   const [isSecretAdminOpen, setIsSecretAdminOpen] = useState(false);
+  const [adminModalMode, setAdminModalMode] = useState("edit"); // "add" or "edit"
   const [artworkToEdit, setArtworkToEdit] = useState(null);
 
   useEffect(() => {
@@ -73,27 +81,56 @@ export default function CreativeShowcase() {
     setCurrentIndex((prev) => (prev - 1 + total) % total);
   }, [total]);
 
-  // Keyboard navigation & Ctrl+F11 / F11 / Ctrl+F2 / Ctrl+F12 shortcut to toggle Edit Mode
+  // Open "Add New Artwork" mode (Ctrl + 11 / Ctrl + F11)
+  const openAddModal = useCallback(() => {
+    setArtworkToEdit(null);
+    setAdminModalMode("add");
+    setIsSecretAdminOpen((prev) => (adminModalMode === "add" && prev ? false : true));
+  }, [adminModalMode]);
+
+  // Open "Edit Current Artwork" mode (Ctrl + 12 / Ctrl + F12)
+  const openEditModal = useCallback((artwork) => {
+    const target = artwork || activeArtwork;
+    setArtworkToEdit(target);
+    setAdminModalMode("edit");
+    setIsSecretAdminOpen((prev) => (adminModalMode === "edit" && prev ? false : true));
+  }, [activeArtwork, adminModalMode]);
+
+  // Keyboard navigation & Shortcuts for Ctrl+11 (Add) vs Ctrl+12 (Edit)
   const handleKeyDown = useCallback(
     (e) => {
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
 
-      // Toggle Edit Mode: Ctrl + F11, F11, Ctrl + F2, Ctrl + F12
+      // 1. ADD NEW ARTWORK: Ctrl + F11 OR Ctrl + 11 OR Ctrl + 1
       if (
         (isCtrlOrCmd && (e.key === "F11" || e.code === "F11")) ||
-        (isCtrlOrCmd && (e.key === "F2" || e.code === "F2")) ||
-        (isCtrlOrCmd && (e.key === "F12" || e.code === "F12")) ||
+        (isCtrlOrCmd && e.key === "1") ||
         e.key === "F11"
       ) {
         e.preventDefault();
-        setIsEditMode((prev) => !prev);
-      } else if (e.key === "ArrowRight" && !isSecretAdminOpen && !selectedArtwork) {
+        openAddModal();
+        return;
+      }
+
+      // 2. EDIT CURRENT ARTWORK: Ctrl + F12 OR Ctrl + 12 OR Ctrl + 2
+      if (
+        (isCtrlOrCmd && (e.key === "F12" || e.code === "F12")) ||
+        (isCtrlOrCmd && e.key === "2") ||
+        e.key === "F12"
+      ) {
+        e.preventDefault();
+        openEditModal();
+        return;
+      }
+
+      // Slide Navigation
+      if (e.key === "ArrowRight" && !isSecretAdminOpen && !selectedArtwork) {
         handleNext();
       } else if (e.key === "ArrowLeft" && !isSecretAdminOpen && !selectedArtwork) {
         handlePrev();
       }
     },
-    [handleNext, handlePrev, isSecretAdminOpen, selectedArtwork]
+    [handleNext, handlePrev, isSecretAdminOpen, selectedArtwork, openAddModal, openEditModal]
   );
 
   useEffect(() => {
@@ -111,18 +148,14 @@ export default function CreativeShowcase() {
     }
   };
 
-  // When artwork is clicked
-  const handleArtworkClick = (artwork) => {
-    if (isEditMode) {
-      // In Editing Mode: open the pre-filled edit modal
-      setArtworkToEdit(artwork);
-      setIsSecretAdminOpen(true);
-    } else {
-      // In normal mode: open full preview view
-      setSelectedArtwork(artwork);
-    }
+  // When artwork is added via Ctrl+11
+  const handleArtworkAdded = (newArtwork) => {
+    setArtworks((prev) => [newArtwork, ...prev]);
+    setCurrentIndex(0);
+    setSelectedArtwork(newArtwork);
   };
 
+  // When artwork is updated via Ctrl+12
   const handleArtworkSaved = (savedItem) => {
     setArtworks((prev) => {
       const idx = prev.findIndex((a) => a.id === savedItem.id);
@@ -162,6 +195,12 @@ export default function CreativeShowcase() {
 
   return (
     <section className="creative-portfolio-root font-geist" id="creative">
+      {/* 1. START: Top Animated RGB Chromatic Glowing Divider Line */}
+      <div className="rgb-glow-divider rgb-glow-top">
+        <div className="rgb-glow-line" />
+        <div className="rgb-glow-aura" />
+      </div>
+
       <div 
         className="creative-stage-screen"
         style={{
@@ -190,27 +229,17 @@ export default function CreativeShowcase() {
         <div className="c-edge-vignette c-edge-left" />
         <div className="c-edge-vignette c-edge-right" />
 
-        {/* Top Status Bar with Edit Mode indicator and toggle */}
+        {/* Top Status Bar with Dedicated Shortcut Actions */}
         <div className="cTopBar">
-          <div 
-            className={`cKickerPill ${isEditMode ? "edit-mode-active" : ""}`}
-            style={
-              isEditMode 
-                ? { borderColor: "rgba(56, 189, 248, 0.5)", background: "rgba(56, 189, 248, 0.12)", color: "#38bdf8" } 
-                : {}
-            }
-          >
-            <button
-              type="button"
-              className="cSecretTriggerDot"
-              style={isEditMode ? { background: "#38bdf8", boxShadow: "0 0 10px #38bdf8" } : {}}
-              onClick={() => setIsEditMode((prev) => !prev)}
-              title={isEditMode ? "Exit Edit Mode (Ctrl+F11)" : "Enter Edit Mode (Ctrl+F11)"}
-              aria-label="Toggle Edit Mode"
+          <div className="cKickerPill">
+            <span 
+              className="pKickerDot" 
+              style={{ 
+                background: activeArtwork.accent || "#c084fc",
+                boxShadow: `0 0 10px ${activeArtwork.accent || "#c084fc"}`
+              }} 
             />
-            <span>
-              {isEditMode ? "✏️ EDITING MODE ACTIVE (Ctrl+F11 to Exit)" : "03 / GRAPHIC DESIGN SECTION"}
-            </span>
+            <span>03 / GRAPHIC DESIGN SECTION</span>
           </div>
         </div>
 
@@ -252,24 +281,18 @@ export default function CreativeShowcase() {
             <div className="cImgWrapper">
               <div
                 className="cImg"
-                onClick={() => handleArtworkClick(activeArtwork)}
+                onClick={() => setSelectedArtwork(activeArtwork)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
-                    handleArtworkClick(activeArtwork);
+                    setSelectedArtwork(activeArtwork);
                   }
                 }}
-                aria-label={
-                  isEditMode
-                    ? `Click to edit ${activeArtwork.title}`
-                    : `Open full preview for ${activeArtwork.title}`
-                }
+                aria-label={`Open full preview for ${activeArtwork.title}`}
                 style={{
-                  boxShadow: isEditMode
-                    ? "0 28px 65px -12px rgba(0, 0, 0, 0.88), 0 0 34px rgba(56, 189, 248, 0.55)"
-                    : `0 28px 65px -12px rgba(0, 0, 0, 0.88), 0 0 34px ${activeArtwork.accentGlow || "rgba(192, 132, 252, 0.45)"}`,
-                  borderColor: isEditMode ? "rgba(56, 189, 248, 0.5)" : "rgba(255, 255, 255, 0.16)",
+                  boxShadow: `0 28px 65px -12px rgba(0, 0, 0, 0.88), 0 0 34px ${activeArtwork.accentGlow || "rgba(192, 132, 252, 0.45)"}`,
+                  borderColor: "rgba(255, 255, 255, 0.16)",
                 }}
               >
                 <img
@@ -289,25 +312,22 @@ export default function CreativeShowcase() {
 
                 <div className="cImgGloss" />
 
-                {/* Top-Right Artwork Badge */}
+                {/* Top-Right Format / Artwork Badge */}
                 <div className="cImgBadge">
                   <span
                     className="cImgBadgeDot"
                     style={{
-                      background: isEditMode ? "#38bdf8" : (activeArtwork.accent || "#c084fc"),
-                      boxShadow: `0 0 8px ${isEditMode ? "#38bdf8" : (activeArtwork.accent || "#c084fc")}`,
+                      background: activeArtwork.accent || "#c084fc",
+                      boxShadow: `0 0 8px ${activeArtwork.accent || "#c084fc"}`,
                     }}
                   />
-                  <span>{isEditMode ? "EDITING" : "ARTWORK"}</span>
+                  <span>{activeArtwork.format ? `${activeArtwork.format} ARTWORK` : "ARTWORK"}</span>
                 </div>
 
-                {/* Hover Quick Hint */}
-                <div 
-                  className="cImgHoverHint"
-                  style={isEditMode ? { background: "rgba(14, 116, 144, 0.85)", borderColor: "rgba(56, 189, 248, 0.6)" } : {}}
-                >
-                  {isEditMode ? <Edit2 size={13} /> : <Eye size={13} />}
-                  <span>{isEditMode ? "Click to Edit & Replace Photo" : "Click for Full Preview"}</span>
+                {/* Hover Quick Preview Hint */}
+                <div className="cImgHoverHint">
+                  <Eye size={13} />
+                  <span>Click for Full Preview</span>
                 </div>
               </div>
             </div>
@@ -331,7 +351,7 @@ export default function CreativeShowcase() {
               {/* Title */}
               <h1
                 className="cTitle"
-                onClick={() => handleArtworkClick(activeArtwork)}
+                onClick={() => setSelectedArtwork(activeArtwork)}
               >
                 {activeArtwork.title}
               </h1>
@@ -351,33 +371,6 @@ export default function CreativeShowcase() {
 
               {/* Description */}
               <p className="cDesc">{activeArtwork.desc}</p>
-
-              {/* When Edit Mode is active, also show an explicit Edit button */}
-              {isEditMode && (
-                <div style={{ marginTop: 6 }}>
-                  <button
-                    type="button"
-                    onClick={() => handleArtworkClick(activeArtwork)}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "8px 16px",
-                      borderRadius: "10px",
-                      background: "rgba(56, 189, 248, 0.15)",
-                      border: "1px solid rgba(56, 189, 248, 0.35)",
-                      color: "#38bdf8",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    <Edit2 size={14} />
-                    <span>Edit Artwork Details &amp; Photo</span>
-                  </button>
-                </div>
-              )}
             </div>
           </motion.div>
         </AnimatePresence>
@@ -409,17 +402,19 @@ export default function CreativeShowcase() {
 
           <div className="cGestureHint">
             <Waves size={13} style={{ color: activeArtwork.accent || "#c084fc" }} />
-            <span>
-              {isEditMode 
-                ? "Slide to any artwork & click to edit its photo and details" 
-                : "Drag or swipe left/right to explore artworks"}
-            </span>
+            <span>Drag or swipe left/right to explore artworks</span>
           </div>
         </div>
       </div>
 
-      {/* Full-Frame Pop-up Modal (Public view when not in edit mode) */}
-      {selectedArtwork && !isEditMode && (
+      {/* 2. END: Bottom Animated RGB Chromatic Glowing Divider Line */}
+      <div className="rgb-glow-divider rgb-glow-bottom">
+        <div className="rgb-glow-line" />
+        <div className="rgb-glow-aura" />
+      </div>
+
+      {/* Full-Frame Pop-up Modal (Public view with high-res & circular animated download button) */}
+      {selectedArtwork && (
         <ArtworkModal
           artwork={selectedArtwork}
           onClose={() => setSelectedArtwork(null)}
@@ -427,14 +422,16 @@ export default function CreativeShowcase() {
         />
       )}
 
-      {/* Secret Admin Edit Modal (Pre-filled with artwork data for instant updating) */}
+      {/* Dedicated Admin Modal: Add New (Ctrl+11) vs Edit Current (Ctrl+12) */}
       <SecretAdminModal
         isOpen={isSecretAdminOpen}
+        mode={adminModalMode}
         artworkToEdit={artworkToEdit}
         onClose={() => {
           setIsSecretAdminOpen(false);
           setArtworkToEdit(null);
         }}
+        onArtworkAdded={handleArtworkAdded}
         onArtworkSaved={handleArtworkSaved}
       />
     </section>

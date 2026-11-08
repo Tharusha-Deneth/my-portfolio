@@ -1,11 +1,36 @@
 import { useState, useRef, useEffect } from "react";
-import { UploadCloud, X, Check, Plus, Edit3, ShieldCheck, Sparkles, Image as ImageIcon } from "lucide-react";
+import { 
+  UploadCloud, 
+  X, 
+  Check, 
+  Plus, 
+  Edit3, 
+  Sparkles, 
+  Image as ImageIcon,
+  Loader2,
+  Layers,
+  FileCode,
+  FolderPlus
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { updateStoredArtwork, SOFTWARE_SUGGESTIONS } from "./creativeData";
+import { parseArtFile } from "./fileParser";
 
-export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artworkToEdit }) {
+export default function SecretAdminModal({ 
+  isOpen, 
+  mode = "edit", // "add" or "edit"
+  artworkToEdit, 
+  onClose, 
+  onArtworkAdded, 
+  onArtworkSaved 
+}) {
   const [isDragging, setIsDragging] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [detectedFormat, setDetectedFormat] = useState(null);
+  const [formatLabel, setFormatLabel] = useState("");
+  const [fileMeta, setFileMeta] = useState(null);
+
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Logos & Emblems");
   const [client, setClient] = useState("Freelance Commission");
@@ -16,9 +41,11 @@ export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artw
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Sync state whenever artworkToEdit or isOpen changes
+  const isEditing = mode === "edit" && Boolean(artworkToEdit);
+
+  // Sync state when modal opens or target artwork changes
   useEffect(() => {
-    if (artworkToEdit) {
+    if (isEditing && artworkToEdit) {
       setPreviewImage(artworkToEdit.img || null);
       setTitle(artworkToEdit.title || "");
       setCategory(artworkToEdit.category || "Logos & Emblems");
@@ -29,8 +56,20 @@ export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artw
           ? artworkToEdit.tools
           : ["Adobe Illustrator", "Photoshop"]
       );
+      // Determine format from existing image or category
+      const fmt = artworkToEdit.format || (artworkToEdit.title?.toLowerCase().includes("emblem") ? "AI" : "PNG");
+      setDetectedFormat(fmt);
+      setFormatLabel(artworkToEdit.dimensions || "High Resolution Artwork");
+      setFileMeta({
+        name: artworkToEdit.title,
+        size: "High Definition",
+      });
     } else {
+      // Add New Mode
       setPreviewImage(null);
+      setDetectedFormat(null);
+      setFormatLabel("");
+      setFileMeta(null);
       setTitle("");
       setCategory("Logos & Emblems");
       setClient("Freelance Commission");
@@ -39,7 +78,7 @@ export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artw
     }
     setTagInput("");
     setSuggestions([]);
-  }, [artworkToEdit, isOpen]);
+  }, [isEditing, artworkToEdit, isOpen]);
 
   // Close on ESC
   useEffect(() => {
@@ -89,70 +128,107 @@ export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artw
     }
   };
 
-  const processFile = (file) => {
-    if (!file || !file.type.startsWith("image/")) {
-      alert("Please upload a valid image file (PNG, JPG, WebP, SVG).");
-      return;
-    }
+  // Process any art file (AI, PSD, SVG, PNG, JPG, WEBP)
+  const processArtFile = async (file) => {
+    if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewImage(e.target.result);
+    setIsParsing(true);
+    try {
+      const parsed = await parseArtFile(file);
+      setPreviewImage(parsed.previewUrl);
+      setDetectedFormat(parsed.format);
+      setFormatLabel(parsed.formatLabel);
+      setFileMeta({
+        name: parsed.fileName,
+        size: parsed.fileSizeStr,
+        dimensions: parsed.dimensions,
+      });
+
+      // Auto-set title if empty
       if (!title) {
-        const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+        const cleanName = parsed.fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
         setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
       }
-    };
-    reader.readAsDataURL(file);
+
+      // Auto-add appropriate tool tag
+      if (parsed.softwareTag && !selectedTools.includes(parsed.softwareTag)) {
+        setSelectedTools((prev) => [parsed.softwareTag, ...prev]);
+      }
+    } catch (err) {
+      console.error("Failed to parse art file:", err);
+      alert("Error reading file. Please try another image or document.");
+    } finally {
+      setIsParsing(false);
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processFile(e.dataTransfer.files[0]);
+      processArtFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleSave = (e) => {
     e.preventDefault();
     if (!previewImage) {
-      alert("Please drop or select an artwork image.");
+      alert("Please upload or drop an artwork file (AI, PSD, SVG, PNG, or JPG).");
       return;
     }
 
     setIsSaving(true);
-    const itemToSave = {
-      ...(artworkToEdit || {}),
-      id: artworkToEdit ? artworkToEdit.id : `custom-${Date.now()}`,
-      title: title || (artworkToEdit?.title || "Creative Artwork"),
-      category: category || (artworkToEdit?.category || "Graphic Design"),
-      categoryKey: category.toLowerCase().replace(/[^a-z]/g, ""),
-      img: previewImage,
-      tools: selectedTools.length ? selectedTools : ["Adobe Photoshop"],
-      year: artworkToEdit?.year || new Date().getFullYear().toString(),
-      dimensions: artworkToEdit?.dimensions || "High Resolution Artwork",
-      client: client || "Client Commission",
-      accent: artworkToEdit?.accent || "#c084fc",
-      accentGlow: artworkToEdit?.accentGlow || "rgba(192, 132, 252, 0.45)",
-      solidBg: artworkToEdit?.solidBg || "#0c0418",
-      bgGradient:
-        artworkToEdit?.bgGradient ||
-        "radial-gradient(ellipse 65% 60% at 30% 50%, rgba(168, 85, 247, 0.38) 0%, transparent 75%)",
-      desc: description || (artworkToEdit?.desc || ""),
-    };
 
-    updateStoredArtwork(itemToSave);
-    setIsSaving(false);
-    if (onArtworkSaved) {
-      onArtworkSaved(itemToSave);
+    if (isEditing) {
+      // MODE: EDIT EXISTING ARTWORK (Ctrl+12)
+      const updatedArtwork = {
+        ...artworkToEdit,
+        title: title || artworkToEdit.title,
+        category: category || artworkToEdit.category,
+        categoryKey: category.toLowerCase().replace(/[^a-z]/g, ""),
+        img: previewImage,
+        format: detectedFormat || artworkToEdit.format || "PNG",
+        tools: selectedTools.length ? selectedTools : artworkToEdit.tools,
+        client: client || artworkToEdit.client,
+        desc: description || artworkToEdit.desc,
+      };
+
+      updateStoredArtwork(updatedArtwork);
+      setIsSaving(false);
+      if (onArtworkSaved) {
+        onArtworkSaved(updatedArtwork);
+      }
+      onClose();
+    } else {
+      // MODE: ADD NEW ARTWORK (Ctrl+11)
+      const newArtwork = {
+        id: `custom-${Date.now()}`,
+        title: title || "New Creative Showcase Project",
+        category: category || "Logos & Emblems",
+        categoryKey: category.toLowerCase().replace(/[^a-z]/g, ""),
+        img: previewImage,
+        format: detectedFormat || "PNG",
+        tools: selectedTools.length ? selectedTools : ["Adobe Illustrator", "Photoshop"],
+        year: new Date().getFullYear().toString(),
+        dimensions: fileMeta?.dimensions || "3840 × 2160 px",
+        client: client || "Freelance Commission",
+        accent: detectedFormat === "AI" ? "#ff9a00" : detectedFormat === "PSD" ? "#38bdf8" : "#c084fc",
+        accentGlow: "rgba(192, 132, 252, 0.45)",
+        solidBg: "#0c0418",
+        bgGradient: "radial-gradient(ellipse 65% 60% at 30% 50%, rgba(168, 85, 247, 0.38) 0%, transparent 75%)",
+        desc: description || `Professional graphic artwork created with ${selectedTools.join(", ")}.`,
+      };
+
+      updateStoredArtwork(newArtwork);
+      setIsSaving(false);
+      if (onArtworkAdded) {
+        onArtworkAdded(newArtwork);
+      }
+      onClose();
     }
-    onClose();
   };
 
   if (!isOpen) return null;
-
-  const isEditing = Boolean(artworkToEdit);
 
   return (
     <AnimatePresence>
@@ -168,12 +244,21 @@ export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artw
           {/* Header */}
           <div className="secret-admin-header">
             <div className="secret-admin-badge">
-              <Edit3 size={15} style={{ color: "#38bdf8" }} />
-              <span>
-                {isEditing
-                  ? `Edit Artwork (${artworkToEdit.indexStr || "01"} / ${artworkToEdit.category})`
-                  : "Add New Artwork"}
-              </span>
+              {isEditing ? (
+                <>
+                  <Edit3 size={15} style={{ color: "#38bdf8" }} />
+                  <span>
+                    Edit Artwork · {artworkToEdit?.indexStr || "01"} / {artworkToEdit?.category}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <FolderPlus size={16} style={{ color: "#4ade80" }} />
+                  <span style={{ color: "#4ade80" }}>
+                    Add New Project Artwork
+                  </span>
+                </>
+              )}
             </div>
 
             <button
@@ -187,7 +272,7 @@ export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artw
           </div>
 
           <form onSubmit={handleSave} className="secret-admin-form">
-            {/* Image Preview / Drag & Drop Zone */}
+            {/* High-Resolution Artwork Stage / Dropzone */}
             {!previewImage ? (
               <div
                 className={`secret-dropzone ${isDragging ? "active" : ""}`}
@@ -199,62 +284,111 @@ export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artw
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <UploadCloud size={38} className="secret-dropzone-icon" />
-                <h4 className="secret-dropzone-title">Drop your new high-res artwork here</h4>
-                <p className="secret-dropzone-sub">Supports PNG, JPG, WebP and SVG formats</p>
+                {isParsing ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "20px 0" }}>
+                    <Loader2 size={36} className="animate-spin" style={{ color: "#38bdf8" }} />
+                    <p style={{ color: "#38bdf8", fontWeight: 700, margin: 0 }}>
+                      Detecting format &amp; rendering high-res preview...
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <UploadCloud size={40} className="secret-dropzone-icon" />
+                    <h4 className="secret-dropzone-title">
+                      Drop Illustrator (.ai), Photoshop (.psd), SVG, or PNG/JPG here
+                    </h4>
+                    <p className="secret-dropzone-sub">
+                      Auto-detects AI, PSD, SVG, WebP, PNG &amp; JPG formats with live full quality rendering
+                    </p>
 
-                <button
-                  type="button"
-                  className="secret-browse-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fileInputRef.current?.click();
-                  }}
-                >
-                  <ImageIcon size={14} />
-                  <span>Choose Photo File</span>
-                </button>
+                    <button
+                      type="button"
+                      className="secret-browse-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      <ImageIcon size={14} />
+                      <span>Browse Art File</span>
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
-              /* Staging Thumb preview */
-              <div className="secret-preview-strip">
-                <img src={previewImage} alt="Staging Preview" className="secret-thumb-img" />
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      color: "#10b981",
-                      fontSize: 13,
-                      fontWeight: 700,
-                    }}
-                  >
-                    <ShieldCheck size={16} />
-                    <span>{isEditing ? "Current Artwork Photo Loaded" : "Photo Loaded & Locked"}</span>
+              /* High-Resolution Artwork Preview Box */
+              <div 
+                className="modal-artwork-stage"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+              >
+                <img 
+                  src={previewImage} 
+                  alt={title || "Artwork Preview"} 
+                  className="modal-artwork-stage-img" 
+                />
+
+                {/* Detected Format Badge */}
+                {detectedFormat && (
+                  <span className={`modal-format-badge ${detectedFormat.toLowerCase()}`}>
+                    <FileCode size={12} />
+                    <span>{detectedFormat} · {formatLabel || "Live Artwork Asset"}</span>
+                  </span>
+                )}
+
+                {/* Bottom Overlay Bar with File Info & Replace Button */}
+                <div className="modal-stage-overlay-bar">
+                  <div className="modal-stage-file-info">
+                    <span className="modal-stage-filename">
+                      {fileMeta?.name || title || "Artwork File"}
+                    </span>
+                    <span className="modal-stage-filesize">
+                      {fileMeta?.size || "High-Res"} {fileMeta?.dimensions ? `· ${fileMeta.dimensions}` : ""}
+                    </span>
                   </div>
-                  <p style={{ margin: "4px 0 0 0", fontSize: 12, color: "#94a3b8" }}>
-                    Click &ldquo;Replace Photo&rdquo; to drop a new image.
-                  </p>
+
+                  <button
+                    type="button"
+                    className="modal-stage-replace-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <UploadCloud size={13} />
+                    <span>Replace / Choose File</span>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="secret-change-btn"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Replace Photo
-                </button>
+
+                {isParsing && (
+                  <div style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "rgba(0,0,0,0.75)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    color: "#38bdf8",
+                    fontWeight: 700,
+                    zIndex: 10
+                  }}>
+                    <Loader2 size={24} className="animate-spin" />
+                    <span>Parsing Art Stream...</span>
+                  </div>
+                )}
               </div>
             )}
 
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept=".ai,.psd,.svg,.png,.jpg,.jpeg,.webp,.gif,.bmp,image/*,application/illustrator,application/postscript,image/vnd.adobe.photoshop"
               style={{ display: "none" }}
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {
-                  processFile(e.target.files[0]);
+                  processArtFile(e.target.files[0]);
                 }
               }}
             />
@@ -322,6 +456,7 @@ export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artw
               <div className="secret-chips-wrap">
                 {selectedTools.map((tool) => (
                   <span key={tool} className="secret-tag-chip">
+                    <Layers size={11} />
                     <span>{tool}</span>
                     <button
                       type="button"
@@ -342,7 +477,7 @@ export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artw
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleTagInputKeyDown}
-                  placeholder="Type tool name (e.g. Adobe Photoshop, Illustrator, Figma)..."
+                  placeholder="Type tool name (e.g. Adobe Illustrator, Photoshop, Figma, InDesign)..."
                   className="secret-input"
                 />
 
@@ -370,16 +505,21 @@ export default function SecretAdminModal({ isOpen, onClose, onArtworkSaved, artw
             <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
               <button
                 type="submit"
-                disabled={isSaving}
+                disabled={isSaving || isParsing}
                 className="secret-publish-btn"
+                style={
+                  !isEditing
+                    ? { background: "#4ade80", color: "#052e16" }
+                    : {}
+                }
               >
                 <Check size={16} />
                 <span>
                   {isSaving
-                    ? "Updating..."
+                    ? "Saving..."
                     : isEditing
-                    ? "Update Artwork (අප්ඩේට් කරන්න)"
-                    : "Publish to Showcase"}
+                    ? "Update Artwork"
+                    : "Publish Artwork"}
                 </span>
               </button>
 
