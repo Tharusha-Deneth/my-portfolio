@@ -1,0 +1,154 @@
+{
+  "entities": {
+    "Artwork": {
+      "title": "Artwork",
+      "description": "A graphic design portfolio showcase item with optimized image preview, metadata, and software tools.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the artwork document.",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "order": {
+          "type": "number",
+          "description": "Sort position for displaying artworks in the showcase."
+        },
+        "title": {
+          "type": "string",
+          "description": "Display title of the artwork.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "description": "Graphic design category label.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "categoryKey": {
+          "type": "string",
+          "description": "Normalized category key.",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "img": {
+          "type": "string",
+          "description": "Image URL or optimized base64 data URL (under 900KB).",
+          "minLength": 1,
+          "maxLength": 900000
+        },
+        "format": {
+          "type": "string",
+          "description": "Source design file format (AI, PSD, SVG, PNG, JPG).",
+          "maxLength": 20
+        },
+        "tools": {
+          "type": "array",
+          "description": "List of creative software tools used (max 12 items)."
+        },
+        "year": {
+          "type": "string",
+          "description": "Year the artwork was created.",
+          "maxLength": 10
+        },
+        "dimensions": {
+          "type": "string",
+          "description": "Artwork dimensions or resolution metadata.",
+          "maxLength": 100
+        },
+        "client": {
+          "type": "string",
+          "description": "Client or brand name.",
+          "maxLength": 150
+        },
+        "accent": {
+          "type": "string",
+          "description": "Primary hex accent color.",
+          "maxLength": 40
+        },
+        "accentGlow": {
+          "type": "string",
+          "description": "Ambient CSS glow rgba string.",
+          "maxLength": 100
+        },
+        "solidBg": {
+          "type": "string",
+          "description": "Stage solid background color.",
+          "maxLength": 40
+        },
+        "bgGradient": {
+          "type": "string",
+          "description": "Stage ambient radial gradient CSS.",
+          "maxLength": 600
+        },
+        "desc": {
+          "type": "string",
+          "description": "Concept description of the artwork.",
+          "maxLength": 2000
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the portfolio owner.",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last update timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "order",
+        "title",
+        "category",
+        "categoryKey",
+        "img",
+        "tools",
+        "desc",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CreativeConfig": {
+      "title": "CreativeConfig",
+      "description": "Tracks initial preset seeding state so deleted presets stay deleted permanently.",
+      "type": "object",
+      "properties": {
+        "seeded": {
+          "type": "boolean",
+          "description": "Whether initial preset artworks have been initialized in Firestore."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the portfolio owner.",
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": ["seeded", "ownerId", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/artworks/{artworkId}": {
+      "schema": { "$ref": "#/entities/Artwork" },
+      "description": "Publicly readable portfolio artworks, writable only by the authenticated portfolio owner."
+    },
+    "/creativeConfig/{configId}": {
+      "schema": { "$ref": "#/entities/CreativeConfig" },
+      "description": "Creative showcase seeding metadata document."
+    }
+  }
+}

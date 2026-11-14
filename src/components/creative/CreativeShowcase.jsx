@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import "./creative.css";
 import { motion, AnimatePresence } from "motion/react";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Sparkles, 
-  Eye, 
-  Waves 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Eye,
+  Waves,
 } from "lucide-react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, OWNER_EMAIL } from "../../firebase";
 import ArtworkModal from "./ArtworkModal";
 import SecretAdminModal from "./SecretAdminModal";
-import { getStoredArtworks } from "./creativeData";
+import { subscribeToArtworks, PRESET_ARTWORKS } from "./creativeData";
 import { useTheme } from "../../context/ThemeContext";
 
 // Slide & 3D lift animation variants mirroring Portfolio.jsx
@@ -49,18 +51,43 @@ export default function CreativeShowcase() {
   const { theme } = useTheme();
   const isLight = theme === "light";
 
-  const [artworks, setArtworks] = useState([]);
+  const [artworks, setArtworks] = useState(PRESET_ARTWORKS);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [selectedArtwork, setSelectedArtwork] = useState(null);
 
-  // Admin Modal state
+  // Firebase Owner Auth State (used strictly inside secret admin modal)
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Secret Admin Modal state
   const [isSecretAdminOpen, setIsSecretAdminOpen] = useState(false);
   const [adminModalMode, setAdminModalMode] = useState("edit"); // "add" or "edit"
   const [artworkToEdit, setArtworkToEdit] = useState(null);
 
+  // Subscribe to Auth state
   useEffect(() => {
-    setArtworks(getStoredArtworks());
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user || null);
+    });
+    return () => unsubAuth();
+  }, []);
+
+  const isOwner = Boolean(
+    currentUser &&
+      currentUser.emailVerified &&
+      currentUser.email?.toLowerCase() === OWNER_EMAIL.toLowerCase()
+  );
+
+  // Subscribe to persistent Firestore artworks + IndexedDB cache
+  useEffect(() => {
+    const unsubArtworks = subscribeToArtworks((nextList) => {
+      setArtworks(nextList);
+      setCurrentIndex((prev) => {
+        if (!nextList.length) return 0;
+        return Math.min(prev, nextList.length - 1);
+      });
+    });
+    return () => unsubArtworks();
   }, []);
 
   const total = artworks.length;
@@ -89,14 +116,24 @@ export default function CreativeShowcase() {
   }, [adminModalMode]);
 
   // Open "Edit Current Artwork" mode (Ctrl + 12 / Ctrl + F12)
-  const openEditModal = useCallback((artwork) => {
-    const target = artwork || activeArtwork;
-    setArtworkToEdit(target);
-    setAdminModalMode("edit");
-    setIsSecretAdminOpen((prev) => (adminModalMode === "edit" && prev ? false : true));
-  }, [activeArtwork, adminModalMode]);
+  const openEditModal = useCallback(
+    (artwork) => {
+      const target = artwork || activeArtwork;
+      if (!target) {
+        // If gallery is empty, open add modal instead
+        setArtworkToEdit(null);
+        setAdminModalMode("add");
+        setIsSecretAdminOpen(true);
+        return;
+      }
+      setArtworkToEdit(target);
+      setAdminModalMode("edit");
+      setIsSecretAdminOpen((prev) => (adminModalMode === "edit" && prev ? false : true));
+    },
+    [activeArtwork, adminModalMode]
+  );
 
-  // Keyboard navigation & Shortcuts for Ctrl+11 (Add) vs Ctrl+12 (Edit)
+  // Keyboard navigation & Secret Shortcuts for Ctrl+11 (Add) vs Ctrl+12 (Edit)
   const handleKeyDown = useCallback(
     (e) => {
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
@@ -148,23 +185,25 @@ export default function CreativeShowcase() {
     }
   };
 
-  // When artwork is added via Ctrl+11
-  const handleArtworkAdded = (newArtwork) => {
-    setArtworks((prev) => [newArtwork, ...prev]);
+  // When artwork is added permanently
+  const handleArtworkAdded = (updatedList, newArtwork) => {
+    setArtworks(updatedList);
     setCurrentIndex(0);
     setSelectedArtwork(newArtwork);
   };
 
-  // When artwork is updated via Ctrl+12
-  const handleArtworkSaved = (savedItem) => {
-    setArtworks((prev) => {
-      const idx = prev.findIndex((a) => a.id === savedItem.id);
-      if (idx !== -1) {
-        const next = [...prev];
-        next[idx] = savedItem;
-        return next;
-      }
-      return [savedItem, ...prev];
+  // When artwork is updated permanently
+  const handleArtworkSaved = (updatedList) => {
+    setArtworks(updatedList);
+  };
+
+  // When artwork is deleted permanently in Edit mode
+  const handleArtworkDeleted = (remainingList) => {
+    setArtworks(remainingList);
+    setSelectedArtwork(null);
+    setCurrentIndex((prev) => {
+      if (!remainingList.length) return 0;
+      return Math.min(prev, remainingList.length - 1);
     });
   };
 
@@ -180,18 +219,18 @@ export default function CreativeShowcase() {
       document.body.removeChild(link);
     } catch (err) {
       console.error("Download failed:", err);
-      window.open(artwork.img, "_blank");
     }
   };
 
-  if (!activeArtwork) return null;
-
-  const currentBgColor = isLight ? "#f8fafc" : (activeArtwork.solidBg || "#0c0418");
+  const currentBgColor = isLight
+    ? "#f8fafc"
+    : activeArtwork?.solidBg || "#0c0418";
   const currentBgGradient = isLight
     ? "radial-gradient(circle at 50% 25%, rgba(216, 180, 254, 0.22) 0%, transparent 65%)"
-    : (activeArtwork.bgGradient || "radial-gradient(ellipse 65% 60% at 30% 50%, rgba(168, 85, 247, 0.38) 0%, transparent 75%)");
+    : activeArtwork?.bgGradient ||
+      "radial-gradient(ellipse 65% 60% at 30% 50%, rgba(168, 85, 247, 0.38) 0%, transparent 75%)";
 
-  const progressFraction = (currentIndex + 1) / total;
+  const progressFraction = total > 0 ? (currentIndex + 1) / total : 0;
 
   return (
     <section className="creative-portfolio-root font-geist" id="creative">
@@ -201,27 +240,27 @@ export default function CreativeShowcase() {
         <div className="rgb-glow-aura" />
       </div>
 
-      <div 
+      <div
         className="creative-stage-screen"
         style={{
           backgroundColor: currentBgColor,
         }}
       >
         {/* Dynamic Multi-Color Ambient Radial Glow */}
-        <div 
-          className="creative-ambient-bg" 
-          style={{ background: currentBgGradient }} 
+        <div
+          className="creative-ambient-bg"
+          style={{ background: currentBgGradient }}
         />
 
         {/* Top Glowing Scroll Progress Track */}
         <div className="cTopProgressTrack">
-          <div 
-            className="cTopProgressBar" 
-            style={{ 
+          <div
+            className="cTopProgressBar"
+            style={{
               transform: `scaleX(${progressFraction})`,
-              background: `linear-gradient(90deg, #c084fc, ${activeArtwork.accent || "#f43f5e"})`,
-              boxShadow: `0 0 16px ${activeArtwork.accentGlow || "rgba(192, 132, 252, 0.6)"}`,
-            }} 
+              background: `linear-gradient(90deg, #c084fc, ${activeArtwork?.accent || "#f43f5e"})`,
+              boxShadow: `0 0 16px ${activeArtwork?.accentGlow || "rgba(192, 132, 252, 0.6)"}`,
+            }}
           />
         </div>
 
@@ -229,182 +268,202 @@ export default function CreativeShowcase() {
         <div className="c-edge-vignette c-edge-left" />
         <div className="c-edge-vignette c-edge-right" />
 
-        {/* Top Status Bar with Dedicated Shortcut Actions */}
+        {/* Top Status Bar */}
         <div className="cTopBar">
           <div className="cKickerPill">
-            <span 
-              className="pKickerDot" 
-              style={{ 
-                background: activeArtwork.accent || "#c084fc",
-                boxShadow: `0 0 10px ${activeArtwork.accent || "#c084fc"}`
-              }} 
+            <span
+              className="pKickerDot"
+              style={{
+                background: activeArtwork?.accent || "#c084fc",
+                boxShadow: `0 0 10px ${activeArtwork?.accent || "#c084fc"}`,
+              }}
             />
             <span>03 / GRAPHIC DESIGN SECTION</span>
           </div>
         </div>
 
-        {/* Floating Cinema Arrow Buttons */}
-        <button
-          type="button"
-          className="cNavArrowBtn prev"
-          onClick={handlePrev}
-          aria-label="Previous artwork"
-        >
-          <ChevronLeft size={22} />
-        </button>
+        {activeArtwork ? (
+          <>
+            {/* Floating Cinema Arrow Buttons */}
+            <button
+              type="button"
+              className="cNavArrowBtn prev"
+              onClick={handlePrev}
+              aria-label="Previous artwork"
+            >
+              <ChevronLeft size={22} />
+            </button>
 
-        <button
-          type="button"
-          className="cNavArrowBtn next"
-          onClick={handleNext}
-          aria-label="Next artwork"
-        >
-          <ChevronRight size={22} />
-        </button>
+            <button
+              type="button"
+              className="cNavArrowBtn next"
+              onClick={handleNext}
+              aria-label="Next artwork"
+            >
+              <ChevronRight size={22} />
+            </button>
 
-        {/* Main Artwork Stage Item - Exact 1:1 Layout of Portfolio.jsx */}
-        <AnimatePresence initial={false} custom={direction} mode="wait">
-          <motion.div
-            key={activeArtwork.id || currentIndex}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.4}
-            onDragEnd={handleDragEnd}
-            className="cItem"
-          >
-            {/* 1. Left (Desktop) / Top (Mobile): Standalone Image Frame */}
-            <div className="cImgWrapper">
-              <div
-                className="cImg"
-                onClick={() => setSelectedArtwork(activeArtwork)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    setSelectedArtwork(activeArtwork);
-                  }
-                }}
-                aria-label={`Open full preview for ${activeArtwork.title}`}
-                style={{
-                  boxShadow: `0 28px 65px -12px rgba(0, 0, 0, 0.88), 0 0 34px ${activeArtwork.accentGlow || "rgba(192, 132, 252, 0.45)"}`,
-                  borderColor: "rgba(255, 255, 255, 0.16)",
-                }}
+            {/* Main Artwork Stage Item */}
+            <AnimatePresence initial={false} custom={direction} mode="wait">
+              <motion.div
+                key={activeArtwork.id || currentIndex}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.4}
+                onDragEnd={handleDragEnd}
+                className="cItem"
               >
-                <img
-                  src={activeArtwork.img}
-                  alt={activeArtwork.title}
-                  draggable={false}
-                  loading="lazy"
-                />
-
-                {/* Dynamic Specular Sheen Light Sweep */}
-                <motion.div
-                  className="cImgShine"
-                  initial={{ x: "-120%", opacity: 0 }}
-                  animate={{ x: ["-120%", "240%"], opacity: [0, 0.7, 0] }}
-                  transition={{ duration: 1.1, delay: 0.1, ease: "easeInOut" }}
-                />
-
-                <div className="cImgGloss" />
-
-                {/* Top-Right Format / Artwork Badge */}
-                <div className="cImgBadge">
-                  <span
-                    className="cImgBadgeDot"
-                    style={{
-                      background: activeArtwork.accent || "#c084fc",
-                      boxShadow: `0 0 8px ${activeArtwork.accent || "#c084fc"}`,
+                {/* 1. Left (Desktop) / Top (Mobile): Standalone Image Frame */}
+                <div className="cImgWrapper">
+                  <div
+                    className="cImg"
+                    onClick={() => setSelectedArtwork(activeArtwork)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        setSelectedArtwork(activeArtwork);
+                      }
                     }}
-                  />
-                  <span>{activeArtwork.format ? `${activeArtwork.format} ARTWORK` : "ARTWORK"}</span>
-                </div>
-
-                {/* Hover Quick Preview Hint */}
-                <div className="cImgHoverHint">
-                  <Eye size={13} />
-                  <span>Click for Full Preview</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Right (Desktop) / Underneath (Mobile): Standalone Details */}
-            <div className="cText">
-              {/* Category & Index Header */}
-              <div className="cBadge" style={{ color: activeArtwork.accent || "#c084fc" }}>
-                <span
-                  className="cBadgeDot"
-                  style={{
-                    background: activeArtwork.accent || "#c084fc",
-                    boxShadow: `0 0 10px ${activeArtwork.accent || "#c084fc"}`,
-                  }}
-                />
-                <span className="cBadgeIndex">{activeArtwork.indexStr || String(currentIndex + 1).padStart(2, "0")}</span>
-                <span className="cBadgeDivider">/</span>
-                <span className="cBadgeCategory">{activeArtwork.category?.toUpperCase()}</span>
-              </div>
-
-              {/* Title */}
-              <h1
-                className="cTitle"
-                onClick={() => setSelectedArtwork(activeArtwork)}
-              >
-                {activeArtwork.title}
-              </h1>
-
-              {/* Software / Tools Chips */}
-              <div className="cTags">
-                {activeArtwork.tools?.map((tool, idx) => (
-                  <span key={idx} className="cTag">
-                    <Sparkles
-                      className="cTagIcon"
-                      style={{ color: activeArtwork.accent || "#c084fc" }}
+                    aria-label={`Open full preview for ${activeArtwork.title}`}
+                    style={{
+                      boxShadow: `0 28px 65px -12px rgba(0, 0, 0, 0.88), 0 0 34px ${
+                        activeArtwork.accentGlow || "rgba(192, 132, 252, 0.45)"
+                      }`,
+                      borderColor: "rgba(255, 255, 255, 0.16)",
+                    }}
+                  >
+                    <img
+                      src={activeArtwork.img}
+                      alt={activeArtwork.title}
+                      draggable={false}
+                      loading="lazy"
                     />
-                    <span>{tool}</span>
-                  </span>
+
+                    {/* Dynamic Specular Sheen Light Sweep */}
+                    <motion.div
+                      className="cImgShine"
+                      initial={{ x: "-120%", opacity: 0 }}
+                      animate={{ x: ["-120%", "240%"], opacity: [0, 0.7, 0] }}
+                      transition={{ duration: 1.1, delay: 0.1, ease: "easeInOut" }}
+                    />
+
+                    <div className="cImgGloss" />
+
+                    {/* Top-Right Format / Artwork Badge */}
+                    <div className="cImgBadge">
+                      <span
+                        className="cImgBadgeDot"
+                        style={{
+                          background: activeArtwork.accent || "#c084fc",
+                          boxShadow: `0 0 8px ${activeArtwork.accent || "#c084fc"}`,
+                        }}
+                      />
+                      <span>
+                        {activeArtwork.format ? `${activeArtwork.format} ARTWORK` : "ARTWORK"}
+                      </span>
+                    </div>
+
+                    {/* Hover Quick Preview Hint */}
+                    <div className="cImgHoverHint">
+                      <Eye size={13} />
+                      <span>Click for Full Preview</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Right (Desktop) / Underneath (Mobile): Standalone Details */}
+                <div className="cText">
+                  <div
+                    className="cBadge"
+                    style={{ color: activeArtwork.accent || "#c084fc" }}
+                  >
+                    <span
+                      className="cBadgeDot"
+                      style={{
+                        background: activeArtwork.accent || "#c084fc",
+                        boxShadow: `0 0 10px ${activeArtwork.accent || "#c084fc"}`,
+                      }}
+                    />
+                    <span className="cBadgeIndex">
+                      {activeArtwork.indexStr || String(currentIndex + 1).padStart(2, "0")}
+                    </span>
+                    <span className="cBadgeDivider">/</span>
+                    <span className="cBadgeCategory">
+                      {activeArtwork.category?.toUpperCase()}
+                    </span>
+                  </div>
+
+                  <h1
+                    className="cTitle"
+                    onClick={() => setSelectedArtwork(activeArtwork)}
+                  >
+                    {activeArtwork.title}
+                  </h1>
+
+                  <div className="cTags">
+                    {activeArtwork.tools?.map((tool, idx) => (
+                      <span key={idx} className="cTag">
+                        <Sparkles
+                          className="cTagIcon"
+                          style={{ color: activeArtwork.accent || "#c084fc" }}
+                        />
+                        <span>{tool}</span>
+                      </span>
+                    ))}
+                  </div>
+
+                  <p className="cDesc">{activeArtwork.desc}</p>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Bottom Navigation Dots & Swipe Hint */}
+            <div className="cBottomControls">
+              <div className="cDotsRow">
+                {artworks.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`cNavDot ${idx === currentIndex ? "active" : ""}`}
+                    style={
+                      idx === currentIndex
+                        ? {
+                            background: activeArtwork.accent || "#ffffff",
+                            boxShadow: `0 0 12px ${activeArtwork.accent || "#ffffff"}`,
+                          }
+                        : {}
+                    }
+                    onClick={() => {
+                      setDirection(idx > currentIndex ? 1 : -1);
+                      setCurrentIndex(idx);
+                    }}
+                    aria-label={`Go to artwork ${idx + 1}`}
+                  />
                 ))}
               </div>
 
-              {/* Description */}
-              <p className="cDesc">{activeArtwork.desc}</p>
+              <div className="cGestureHint">
+                <Waves size={13} style={{ color: activeArtwork.accent || "#c084fc" }} />
+                <span>Drag or swipe left/right to explore artworks</span>
+              </div>
             </div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Bottom Navigation Dots & Swipe Hint */}
-        <div className="cBottomControls">
-          <div className="cDotsRow">
-            {artworks.map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                className={`cNavDot ${idx === currentIndex ? "active" : ""}`}
-                style={
-                  idx === currentIndex
-                    ? {
-                        background: activeArtwork.accent || "#ffffff",
-                        boxShadow: `0 0 12px ${activeArtwork.accent || "#ffffff"}`,
-                      }
-                    : {}
-                }
-                onClick={() => {
-                  setDirection(idx > currentIndex ? 1 : -1);
-                  setCurrentIndex(idx);
-                }}
-                aria-label={`Go to artwork ${idx + 1}`}
-              />
-            ))}
+          </>
+        ) : (
+          <div className="cItem" style={{ justifyContent: "center", textAlign: "center" }}>
+            <div className="cText" style={{ alignItems: "center", maxWidth: 480 }}>
+              <h2 className="cTitle" style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)" }}>
+                Creative Gallery
+              </h2>
+              <p className="cDesc">Curated graphic design works will appear here soon.</p>
+            </div>
           </div>
-
-          <div className="cGestureHint">
-            <Waves size={13} style={{ color: activeArtwork.accent || "#c084fc" }} />
-            <span>Drag or swipe left/right to explore artworks</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* 2. END: Bottom Animated RGB Chromatic Glowing Divider Line */}
@@ -413,7 +472,7 @@ export default function CreativeShowcase() {
         <div className="rgb-glow-aura" />
       </div>
 
-      {/* Full-Frame Pop-up Modal (Public view with high-res & circular animated download button) */}
+      {/* Full-Frame Pop-up Modal (Public view) */}
       {selectedArtwork && (
         <ArtworkModal
           artwork={selectedArtwork}
@@ -422,17 +481,21 @@ export default function CreativeShowcase() {
         />
       )}
 
-      {/* Dedicated Admin Modal: Add New (Ctrl+11) vs Edit Current (Ctrl+12) */}
+      {/* Secret Admin Modal: Add New (Ctrl+11) vs Edit/Delete Current (Ctrl+12) */}
       <SecretAdminModal
         isOpen={isSecretAdminOpen}
         mode={adminModalMode}
         artworkToEdit={artworkToEdit}
+        currentArtworks={artworks}
+        currentUser={currentUser}
+        isOwner={isOwner}
         onClose={() => {
           setIsSecretAdminOpen(false);
           setArtworkToEdit(null);
         }}
         onArtworkAdded={handleArtworkAdded}
         onArtworkSaved={handleArtworkSaved}
+        onArtworkDeleted={handleArtworkDeleted}
       />
     </section>
   );

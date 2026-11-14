@@ -27,13 +27,97 @@ export function formatBytes(bytes, decimals = 1) {
 }
 
 /**
+ * Convert Uint8Array safely to base64 data URL (persists across reloads, unlike blob: URLs)
+ */
+function uint8ToBase64DataUrl(uint8Array, mimeType = "image/jpeg") {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < uint8Array.length; i += chunkSize) {
+    const chunk = uint8Array.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  return `data:${mimeType};base64,${btoa(binary)}`;
+}
+
+/**
+ * Optimize any image data URL so it remains crisp (up to 1600px) while staying safely under
+ * Firestore's 1MB document limit (~720KB max base64 string).
+ */
+export function optimizeDataUrl(dataUrl, maxDim = 1600, maxStringLength = 720000) {
+  if (!dataUrl || typeof dataUrl !== "string") return Promise.resolve(dataUrl);
+  // Keep compact SVGs or external asset paths untouched
+  if (!dataUrl.startsWith("data:")) return Promise.resolve(dataUrl);
+  if (dataUrl.startsWith("data:image/svg+xml") && dataUrl.length <= maxStringLength) {
+    return Promise.resolve(dataUrl);
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const origW = img.naturalWidth || img.width || 1200;
+      const origH = img.naturalHeight || img.height || 800;
+
+      let targetW = origW;
+      let targetH = origH;
+      if (origW > maxDim || origH > maxDim) {
+        const scale = Math.min(maxDim / origW, maxDim / origH);
+        targetW = Math.max(1, Math.round(origW * scale));
+        targetH = Math.max(1, Math.round(origH * scale));
+      }
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+
+      const attemptEncode = (w, h, qualities) => {
+        canvas.width = w;
+        canvas.height = h;
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        for (const q of qualities) {
+          const webp = canvas.toDataURL("image/webp", q);
+          if (webp && webp.startsWith("data:image/webp") && webp.length <= maxStringLength) {
+            return webp;
+          }
+          const jpg = canvas.toDataURL("image/jpeg", q);
+          if (jpg && jpg.length <= maxStringLength) {
+            return jpg;
+          }
+        }
+        return null;
+      };
+
+      // Try full target resolution first, then step down slightly only if needed
+      let optimized = attemptEncode(targetW, targetH, [0.9, 0.82, 0.72, 0.6]);
+      if (!optimized) {
+        optimized = attemptEncode(
+          Math.max(1, Math.round(targetW * 0.75)),
+          Math.max(1, Math.round(targetH * 0.75)),
+          [0.82, 0.7, 0.58]
+        );
+      }
+      if (!optimized) {
+        optimized = canvas.toDataURL("image/jpeg", 0.52);
+      }
+
+      resolve(optimized);
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/**
  * Extract embedded XMP base64 thumbnail from AI / PSD files
  */
 function extractXmpThumbnail(buffer) {
   try {
     const uint8 = new Uint8Array(buffer);
-    // Scan as binary latin1 string
-    const chunkLimit = Math.min(uint8.length, 1024 * 1024 * 4); // scan up to first 4MB for XMP packet
+    const chunkLimit = Math.min(uint8.length, 1024 * 1024 * 4);
     const text = new TextDecoder("latin1").decode(uint8.subarray(0, chunkLimit));
 
     // Look for <xmpGImg:image>...base64...</xmpGImg:image>
@@ -54,14 +138,13 @@ function extractXmpThumbnail(buffer) {
       }
     }
 
-    // Look for raw embedded JPEG marker in PDF/AI stream: \xFF\xD8\xFF\xE0 ... \xFF\xD9
+    // Look for raw embedded JPEG marker in PDF/AI stream: \xFF\xD8\xFF ... \xFF\xD9 (persistent data URL)
     const startIdx = text.indexOf("\xFF\xD8\xFF");
     if (startIdx !== -1) {
       const endIdx = text.indexOf("\xFF\xD9", startIdx + 4);
       if (endIdx !== -1 && endIdx - startIdx > 200) {
         const jpegBytes = uint8.slice(startIdx, endIdx + 2);
-        const blob = new Blob([jpegBytes], { type: "image/jpeg" });
-        return URL.createObjectURL(blob);
+        return uint8ToBase64DataUrl(jpegBytes, "image/jpeg");
       }
     }
   } catch (err) {
@@ -80,7 +163,6 @@ function createFallbackGraphicCard(fileName, formatType, fileSizeStr, colorTheme
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
 
-  // Dark gradient background
   const bg = ctx.createLinearGradient(0, 0, 1600, 1000);
   bg.addColorStop(0, "#100c1e");
   bg.addColorStop(0.5, "#18132b");
@@ -88,7 +170,6 @@ function createFallbackGraphicCard(fileName, formatType, fileSizeStr, colorTheme
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, 1600, 1000);
 
-  // Subtle grid
   ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
   ctx.lineWidth = 1;
   for (let x = 0; x < 1600; x += 50) {
@@ -104,14 +185,12 @@ function createFallbackGraphicCard(fileName, formatType, fileSizeStr, colorTheme
     ctx.stroke();
   }
 
-  // Glowing center badge
   const centerGlow = ctx.createRadialGradient(800, 480, 50, 800, 480, 400);
   centerGlow.addColorStop(0, colorTheme === "#ff9a00" ? "rgba(255, 154, 0, 0.25)" : "rgba(56, 189, 248, 0.25)");
   centerGlow.addColorStop(1, "transparent");
   ctx.fillStyle = centerGlow;
   ctx.fillRect(400, 100, 800, 800);
 
-  // Rounded icon frame
   const iconX = 680;
   const iconY = 320;
   const iconSize = 240;
@@ -123,29 +202,25 @@ function createFallbackGraphicCard(fileName, formatType, fileSizeStr, colorTheme
   ctx.fill();
   ctx.stroke();
 
-  // Format Letter in badge (e.g. Ai or Ps)
   ctx.fillStyle = colorTheme;
   ctx.font = "bold 96px Geist, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(formatType === "AI" ? "Ai" : formatType === "PSD" ? "Ps" : formatType, 800, 440);
 
-  // File Name
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 44px Geist, sans-serif";
   ctx.fillText(fileName, 800, 640);
 
-  // Format metadata
   ctx.fillStyle = "#94a3b8";
   ctx.font = "600 28px Geist, sans-serif";
-  const subtitle = formatType === "AI" 
-    ? `Adobe Illustrator Vector Artwork · ${fileSizeStr}` 
-    : formatType === "PSD" 
-    ? `Photoshop Master Document · ${fileSizeStr}` 
+  const subtitle = formatType === "AI"
+    ? `Adobe Illustrator Vector Artwork · ${fileSizeStr}`
+    : formatType === "PSD"
+    ? `Photoshop Master Document · ${fileSizeStr}`
     : `Design Artwork File · ${fileSizeStr}`;
   ctx.fillText(subtitle, 800, 710);
 
-  // Status pill
   ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
   ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
   ctx.lineWidth = 2;
@@ -158,12 +233,12 @@ function createFallbackGraphicCard(fileName, formatType, fileSizeStr, colorTheme
   ctx.font = "bold 20px Geist, sans-serif";
   ctx.fillText("✓ DESIGN ASSET READY", 800, 794);
 
-  return canvas.toDataURL("image/png");
+  return canvas.toDataURL("image/webp", 0.88);
 }
 
 /**
  * Universal Art File Parser
- * Detects AI, PSD, SVG, PNG, JPG, WEBP, GIF and produces high-quality live preview
+ * Detects AI, PSD, SVG, PNG, JPG, WEBP, GIF and produces persistent optimized preview
  */
 export async function parseArtFile(file) {
   if (!file) throw new Error("No file provided");
@@ -176,11 +251,12 @@ export async function parseArtFile(file) {
   if (fileExt === "svg" || file.type === "image/svg+xml") {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
+        const previewUrl = await optimizeDataUrl(e.target.result);
         resolve({
           format: "SVG",
           formatLabel: "Scalable Vector Graphics (.svg)",
-          previewUrl: e.target.result,
+          previewUrl,
           fileName,
           fileSizeStr,
           softwareTag: "Adobe Illustrator",
@@ -198,13 +274,14 @@ export async function parseArtFile(file) {
   ) {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         let detected = fileExt.toUpperCase();
         if (detected === "JPEG") detected = "JPG";
+        const previewUrl = await optimizeDataUrl(e.target.result);
         resolve({
           format: detected,
           formatLabel: `${detected} High-Res Graphic (.${fileExt})`,
-          previewUrl: e.target.result,
+          previewUrl,
           fileName,
           fileSizeStr,
           softwareTag: detected === "PNG" ? "Photoshop" : "Adobe Photoshop",
@@ -223,7 +300,8 @@ export async function parseArtFile(file) {
     try {
       const psd = readPsd(arrayBuffer, { skipLayerImageData: false });
       if (psd && psd.canvas) {
-        const previewUrl = psd.canvas.toDataURL("image/png");
+        const rawUrl = psd.canvas.toDataURL("image/png");
+        const previewUrl = await optimizeDataUrl(rawUrl);
         return {
           format: "PSD",
           formatLabel: "Adobe Photoshop Master Document (.psd)",
@@ -242,10 +320,11 @@ export async function parseArtFile(file) {
     // Strategy B: Embedded XMP thumbnail
     const xmpPreview = extractXmpThumbnail(arrayBuffer);
     if (xmpPreview) {
+      const previewUrl = await optimizeDataUrl(xmpPreview);
       return {
         format: "PSD",
         formatLabel: "Adobe Photoshop Document (.psd)",
-        previewUrl: xmpPreview,
+        previewUrl,
         fileName,
         fileSizeStr,
         softwareTag: "Adobe Photoshop",
@@ -269,13 +348,13 @@ export async function parseArtFile(file) {
   if (fileExt === "ai" || file.type.includes("illustrator") || file.type.includes("postscript")) {
     const arrayBuffer = await file.arrayBuffer();
 
-    // Strategy A: Embedded XMP composite preview (standard in Illustrator)
     const xmpPreview = extractXmpThumbnail(arrayBuffer);
     if (xmpPreview) {
+      const previewUrl = await optimizeDataUrl(xmpPreview);
       return {
         format: "AI",
         formatLabel: "Adobe Illustrator Vector Artwork (.ai)",
-        previewUrl: xmpPreview,
+        previewUrl,
         fileName,
         fileSizeStr,
         softwareTag: "Adobe Illustrator",
@@ -283,7 +362,6 @@ export async function parseArtFile(file) {
       };
     }
 
-    // Strategy B: If file is PDF-compatible, read as PDF page or fallback
     return {
       format: "AI",
       formatLabel: "Adobe Illustrator Vector Artwork (.ai)",
@@ -298,11 +376,12 @@ export async function parseArtFile(file) {
   // 5. Fallback for any other file type
   return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
+      const previewUrl = await optimizeDataUrl(e.target.result);
       resolve({
         format: fileExt.toUpperCase(),
         formatLabel: `${fileExt.toUpperCase()} Artwork File`,
-        previewUrl: e.target.result,
+        previewUrl,
         fileName,
         fileSizeStr,
         softwareTag: "Graphic Design",

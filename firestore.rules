@@ -1,0 +1,121 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable primitives
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        (
+          request.auth.token.email == 'sdeneth72@gmail.com' ||
+          exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        );
+    }
+
+    function isValidArtwork(data) {
+      return data.keys().hasAll([
+          'id', 'order', 'title', 'category', 'categoryKey',
+          'img', 'tools', 'desc', 'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'order', 'title', 'category', 'categoryKey',
+          'img', 'format', 'tools', 'year', 'dimensions',
+          'client', 'accent', 'accentGlow', 'solidBg', 'bgGradient',
+          'desc', 'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.order is number && data.order >= -1000000 && data.order <= 1000000 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 100 &&
+        data.categoryKey is string && data.categoryKey.size() >= 1 && data.categoryKey.size() <= 60 &&
+        data.img is string && data.img.size() >= 1 && data.img.size() <= 900000 &&
+        data.tools is list && data.tools.size() >= 1 && data.tools.size() <= 12 &&
+        data.tools[0] is string && data.tools[0].size() <= 60 &&
+        data.desc is string && data.desc.size() <= 2000 &&
+        data.ownerId is string && data.ownerId.size() > 0 && data.ownerId.size() <= 128 &&
+        data.ownerId == request.auth.uid &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        (!('format' in data) || (data.format is string && data.format.size() <= 20)) &&
+        (!('year' in data) || (data.year is string && data.year.size() <= 10)) &&
+        (!('dimensions' in data) || (data.dimensions is string && data.dimensions.size() <= 100)) &&
+        (!('client' in data) || (data.client is string && data.client.size() <= 150)) &&
+        (!('accent' in data) || (data.accent is string && data.accent.size() <= 40)) &&
+        (!('accentGlow' in data) || (data.accentGlow is string && data.accentGlow.size() <= 100)) &&
+        (!('solidBg' in data) || (data.solidBg is string && data.solidBg.size() <= 40)) &&
+        (!('bgGradient' in data) || (data.bgGradient is string && data.bgGradient.size() <= 600));
+    }
+
+    function isValidCreativeConfig(data) {
+      return data.keys().hasAll(['seeded', 'ownerId', 'updatedAt']) &&
+        data.keys().hasOnly(['seeded', 'ownerId', 'updatedAt']) &&
+        data.seeded is bool &&
+        data.ownerId is string && data.ownerId.size() > 0 && data.ownerId.size() <= 128 &&
+        data.ownerId == request.auth.uid &&
+        data.updatedAt is timestamp;
+    }
+
+    // Public portfolio artworks: readable by anyone (HR/clients), writable only by verified portfolio owner
+    match /artworks/{artworkId} {
+      allow get: if isValidId(artworkId);
+      allow list: if resource.data.title is string;
+      allow create: if isAdmin() &&
+        isValidId(artworkId) &&
+        isValidArtwork(incoming()) &&
+        incoming().id == artworkId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isAdmin() &&
+        isValidId(artworkId) &&
+        isValidArtwork(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'order', 'title', 'category', 'categoryKey',
+          'img', 'format', 'tools', 'year', 'dimensions',
+          'client', 'accent', 'accentGlow', 'solidBg', 'bgGradient',
+          'desc', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(artworkId);
+    }
+
+    // Creative showcase seeding state
+    match /creativeConfig/{configId} {
+      allow get: if configId == 'meta';
+      allow list: if false;
+      allow create: if isAdmin() &&
+        configId == 'meta' &&
+        isValidCreativeConfig(incoming()) &&
+        incoming().updatedAt == request.time;
+      allow update: if isAdmin() &&
+        configId == 'meta' &&
+        isValidCreativeConfig(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['seeded', 'updatedAt']);
+      allow delete: if false;
+    }
+  }
+}

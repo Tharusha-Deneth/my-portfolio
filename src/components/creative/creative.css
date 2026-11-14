@@ -1346,3 +1346,117 @@
   font-size: 13px;
   cursor: pointer;
 }
+
+.secret-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.secret-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: rgba(244, 63, 94, 0.14);
+  border: 1px solid rgba(244, 63, 94, 0.42);
+  color: #fb7185;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secret-delete-btn:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.26);
+  border-color: rgba(244, 63, 94, 0.7);
+  color: #ffe4e6;
+}
+
+.secret-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secret-delete-confirm-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  color: #fecdd3;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.secret-delete-confirm-yes {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: #e11d48;
+  border: none;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secret-delete-confirm-yes:hover:not(:disabled) {
+  background: #be123c;
+}
+
+.secret-auth-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  color: #e0f2fe;
+  font-size: 12.5px;
+}
+
+.secret-auth-banner.verified {
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.28);
+  color: #dcfce7;
+}
+
+.secret-auth-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: #38bdf8;
+  border: none;
+  color: #082f49;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.secret-auth-btn:hover {
+  background: #7dd3fc;
+}
+
+.secret-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(244, 63, 94, 0.14);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  color: #fecdd3;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+

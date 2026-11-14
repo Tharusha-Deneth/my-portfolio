@@ -1,28 +1,43 @@
 import { useState, useRef, useEffect } from "react";
-import { 
-  UploadCloud, 
-  X, 
-  Check, 
-  Plus, 
-  Edit3, 
-  Sparkles, 
+import {
+  UploadCloud,
+  X,
+  Check,
+  Plus,
+  Edit3,
+  Sparkles,
   Image as ImageIcon,
   Loader2,
   Layers,
   FileCode,
-  FolderPlus
+  FolderPlus,
+  Trash2,
+  ShieldCheck,
+  LogIn,
+  LogOut,
+  AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { updateStoredArtwork, SOFTWARE_SUGGESTIONS } from "./creativeData";
+import { signInWithPopup, signOut } from "firebase/auth";
+import { auth, googleProvider } from "../../firebase";
+import {
+  saveArtworkPermanently,
+  deleteArtworkPermanently,
+  SOFTWARE_SUGGESTIONS,
+} from "./creativeData";
 import { parseArtFile } from "./fileParser";
 
-export default function SecretAdminModal({ 
-  isOpen, 
-  mode = "edit", // "add" or "edit"
-  artworkToEdit, 
-  onClose, 
-  onArtworkAdded, 
-  onArtworkSaved 
+export default function SecretAdminModal({
+  isOpen,
+  mode = "edit",
+  artworkToEdit,
+  currentArtworks = [],
+  currentUser = null,
+  isOwner = false,
+  onClose,
+  onArtworkAdded,
+  onArtworkSaved,
+  onArtworkDeleted,
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
@@ -39,12 +54,19 @@ export default function SecretAdminModal({
   const [tagInput, setTagInput] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const fileInputRef = useRef(null);
 
   const isEditing = mode === "edit" && Boolean(artworkToEdit);
 
   // Sync state when modal opens or target artwork changes
   useEffect(() => {
+    setErrorMsg("");
+    setConfirmDelete(false);
+    setIsDeleting(false);
     if (isEditing && artworkToEdit) {
       setPreviewImage(artworkToEdit.img || null);
       setTitle(artworkToEdit.title || "");
@@ -56,8 +78,9 @@ export default function SecretAdminModal({
           ? artworkToEdit.tools
           : ["Adobe Illustrator", "Photoshop"]
       );
-      // Determine format from existing image or category
-      const fmt = artworkToEdit.format || (artworkToEdit.title?.toLowerCase().includes("emblem") ? "AI" : "PNG");
+      const fmt =
+        artworkToEdit.format ||
+        (artworkToEdit.title?.toLowerCase().includes("emblem") ? "AI" : "PNG");
       setDetectedFormat(fmt);
       setFormatLabel(artworkToEdit.dimensions || "High Resolution Artwork");
       setFileMeta({
@@ -65,7 +88,6 @@ export default function SecretAdminModal({
         size: "High Definition",
       });
     } else {
-      // Add New Mode
       setPreviewImage(null);
       setDetectedFormat(null);
       setFormatLabel("");
@@ -128,10 +150,32 @@ export default function SecretAdminModal({
     }
   };
 
+  const handleOwnerSignIn = async () => {
+    setErrorMsg("");
+    setIsSigningIn(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      console.error("Google sign-in failed:", err);
+      setErrorMsg("Google sign-in could not complete. Please allow popups and try again.");
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleOwnerSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error("Sign out error:", err);
+    }
+  };
+
   // Process any art file (AI, PSD, SVG, PNG, JPG, WEBP)
   const processArtFile = async (file) => {
     if (!file) return;
 
+    setErrorMsg("");
     setIsParsing(true);
     try {
       const parsed = await parseArtFile(file);
@@ -144,19 +188,17 @@ export default function SecretAdminModal({
         dimensions: parsed.dimensions,
       });
 
-      // Auto-set title if empty
       if (!title) {
         const cleanName = parsed.fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
         setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
       }
 
-      // Auto-add appropriate tool tag
       if (parsed.softwareTag && !selectedTools.includes(parsed.softwareTag)) {
         setSelectedTools((prev) => [parsed.softwareTag, ...prev]);
       }
     } catch (err) {
       console.error("Failed to parse art file:", err);
-      alert("Error reading file. Please try another image or document.");
+      setErrorMsg("Could not read this file. Please try another AI, PSD, SVG, PNG, or JPG file.");
     } finally {
       setIsParsing(false);
     }
@@ -170,61 +212,109 @@ export default function SecretAdminModal({
     }
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
+
     if (!previewImage) {
-      alert("Please upload or drop an artwork file (AI, PSD, SVG, PNG, or JPG).");
+      setErrorMsg("Please upload or drop an artwork file (AI, PSD, SVG, PNG, or JPG).");
       return;
     }
 
+    const activeUid = isOwner && currentUser?.uid ? currentUser.uid : null;
+
     setIsSaving(true);
+    try {
+      if (isEditing) {
+        const updatedArtwork = {
+          ...artworkToEdit,
+          title: title || artworkToEdit.title,
+          category: category || artworkToEdit.category,
+          categoryKey: category.toLowerCase().replace(/[^a-z]/g, ""),
+          img: previewImage,
+          format: detectedFormat || artworkToEdit.format || "PNG",
+          tools: selectedTools.length ? selectedTools : artworkToEdit.tools,
+          client: client || artworkToEdit.client,
+          desc: description || artworkToEdit.desc,
+        };
 
-    if (isEditing) {
-      // MODE: EDIT EXISTING ARTWORK (Ctrl+12)
-      const updatedArtwork = {
-        ...artworkToEdit,
-        title: title || artworkToEdit.title,
-        category: category || artworkToEdit.category,
-        categoryKey: category.toLowerCase().replace(/[^a-z]/g, ""),
-        img: previewImage,
-        format: detectedFormat || artworkToEdit.format || "PNG",
-        tools: selectedTools.length ? selectedTools : artworkToEdit.tools,
-        client: client || artworkToEdit.client,
-        desc: description || artworkToEdit.desc,
-      };
+        const result = await saveArtworkPermanently(updatedArtwork, {
+          isEditing: true,
+          currentList: currentArtworks,
+          uid: activeUid,
+        });
 
-      updateStoredArtwork(updatedArtwork);
+        if (onArtworkSaved) {
+          onArtworkSaved(result.list, result.saved);
+        }
+        onClose();
+      } else {
+        const newArtwork = {
+          id: `custom-${Date.now()}`,
+          title: title || "New Creative Showcase Project",
+          category: category || "Logos & Emblems",
+          categoryKey: category.toLowerCase().replace(/[^a-z]/g, ""),
+          img: previewImage,
+          format: detectedFormat || "PNG",
+          tools: selectedTools.length ? selectedTools : ["Adobe Illustrator", "Photoshop"],
+          year: new Date().getFullYear().toString(),
+          dimensions: fileMeta?.dimensions || "3840 x 2160 px",
+          client: client || "Freelance Commission",
+          accent:
+            detectedFormat === "AI"
+              ? "#ff9a00"
+              : detectedFormat === "PSD"
+              ? "#38bdf8"
+              : "#c084fc",
+          accentGlow: "rgba(192, 132, 252, 0.45)",
+          solidBg: "#0c0418",
+          bgGradient:
+            "radial-gradient(ellipse 65% 60% at 30% 50%, rgba(168, 85, 247, 0.38) 0%, transparent 75%)",
+          desc:
+            description ||
+            `Professional graphic artwork created with ${selectedTools.join(", ")}.`,
+        };
+
+        const result = await saveArtworkPermanently(newArtwork, {
+          isEditing: false,
+          currentList: currentArtworks,
+          uid: activeUid,
+        });
+
+        if (onArtworkAdded) {
+          onArtworkAdded(result.list, result.saved);
+        }
+        onClose();
+      }
+    } catch (err) {
+      console.error("Failed to save artwork:", err);
+      setErrorMsg("Unable to save artwork changes. Please try again.");
+    } finally {
       setIsSaving(false);
-      if (onArtworkSaved) {
-        onArtworkSaved(updatedArtwork);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!isEditing || !artworkToEdit?.id) return;
+    setErrorMsg("");
+
+    const activeUid = isOwner && currentUser?.uid ? currentUser.uid : null;
+
+    setIsDeleting(true);
+    try {
+      const remaining = await deleteArtworkPermanently(artworkToEdit.id, {
+        currentList: currentArtworks,
+        uid: activeUid,
+      });
+      if (onArtworkDeleted) {
+        onArtworkDeleted(remaining, artworkToEdit.id);
       }
       onClose();
-    } else {
-      // MODE: ADD NEW ARTWORK (Ctrl+11)
-      const newArtwork = {
-        id: `custom-${Date.now()}`,
-        title: title || "New Creative Showcase Project",
-        category: category || "Logos & Emblems",
-        categoryKey: category.toLowerCase().replace(/[^a-z]/g, ""),
-        img: previewImage,
-        format: detectedFormat || "PNG",
-        tools: selectedTools.length ? selectedTools : ["Adobe Illustrator", "Photoshop"],
-        year: new Date().getFullYear().toString(),
-        dimensions: fileMeta?.dimensions || "3840 × 2160 px",
-        client: client || "Freelance Commission",
-        accent: detectedFormat === "AI" ? "#ff9a00" : detectedFormat === "PSD" ? "#38bdf8" : "#c084fc",
-        accentGlow: "rgba(192, 132, 252, 0.45)",
-        solidBg: "#0c0418",
-        bgGradient: "radial-gradient(ellipse 65% 60% at 30% 50%, rgba(168, 85, 247, 0.38) 0%, transparent 75%)",
-        desc: description || `Professional graphic artwork created with ${selectedTools.join(", ")}.`,
-      };
-
-      updateStoredArtwork(newArtwork);
-      setIsSaving(false);
-      if (onArtworkAdded) {
-        onArtworkAdded(newArtwork);
-      }
-      onClose();
+    } catch (err) {
+      console.error("Failed to delete artwork:", err);
+      setErrorMsg("Failed to delete artwork. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -254,9 +344,7 @@ export default function SecretAdminModal({
               ) : (
                 <>
                   <FolderPlus size={16} style={{ color: "#4ade80" }} />
-                  <span style={{ color: "#4ade80" }}>
-                    Add New Project Artwork
-                  </span>
+                  <span style={{ color: "#4ade80" }}>Add New Project Artwork</span>
                 </>
               )}
             </div>
@@ -272,6 +360,73 @@ export default function SecretAdminModal({
           </div>
 
           <form onSubmit={handleSave} className="secret-admin-form">
+            {/* Persistent Storage & Optional Cloud Sync Status */}
+            {!isOwner ? (
+              <div className="secret-auth-banner">
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 200 }}>
+                  <ShieldCheck size={16} style={{ color: "#38bdf8", flexShrink: 0 }} />
+                  <span>
+                    {currentUser && currentUser.email
+                      ? `Local Browser Storage Active (${currentUser.email} cannot write to cloud).`
+                      : "Browser Storage (IndexedDB) Active · Edits auto-save across reloads."}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="secret-auth-btn"
+                  onClick={handleOwnerSignIn}
+                  disabled={isSigningIn}
+                >
+                  {isSigningIn ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Signing in...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogIn size={14} />
+                      <span>Cloud Sync</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className="secret-auth-banner verified">
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <ShieldCheck size={16} style={{ color: "#4ade80", flexShrink: 0 }} />
+                  <span>Cloud &amp; Browser Sync Active · {currentUser?.email}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleOwnerSignOut}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    background: "none",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    color: "#cbd5e1",
+                    borderRadius: 6,
+                    padding: "4px 10px",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  <LogOut size={12} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+
+            {/* Inline Error Banner */}
+            {errorMsg && (
+              <div className="secret-error-banner">
+                <AlertCircle size={16} style={{ color: "#fb7185", flexShrink: 0 }} />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
             {/* High-Resolution Artwork Stage / Dropzone */}
             {!previewImage ? (
               <div
@@ -285,7 +440,15 @@ export default function SecretAdminModal({
                 onClick={() => fileInputRef.current?.click()}
               >
                 {isParsing ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "20px 0" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "20px 0",
+                    }}
+                  >
                     <Loader2 size={36} className="animate-spin" style={{ color: "#38bdf8" }} />
                     <p style={{ color: "#38bdf8", fontWeight: 700, margin: 0 }}>
                       Detecting format &amp; rendering high-res preview...
@@ -316,8 +479,7 @@ export default function SecretAdminModal({
                 )}
               </div>
             ) : (
-              /* High-Resolution Artwork Preview Box */
-              <div 
+              <div
                 className="modal-artwork-stage"
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -326,28 +488,29 @@ export default function SecretAdminModal({
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
               >
-                <img 
-                  src={previewImage} 
-                  alt={title || "Artwork Preview"} 
-                  className="modal-artwork-stage-img" 
+                <img
+                  src={previewImage}
+                  alt={title || "Artwork Preview"}
+                  className="modal-artwork-stage-img"
                 />
 
-                {/* Detected Format Badge */}
                 {detectedFormat && (
                   <span className={`modal-format-badge ${detectedFormat.toLowerCase()}`}>
                     <FileCode size={12} />
-                    <span>{detectedFormat} · {formatLabel || "Live Artwork Asset"}</span>
+                    <span>
+                      {detectedFormat} · {formatLabel || "Live Artwork Asset"}
+                    </span>
                   </span>
                 )}
 
-                {/* Bottom Overlay Bar with File Info & Replace Button */}
                 <div className="modal-stage-overlay-bar">
                   <div className="modal-stage-file-info">
                     <span className="modal-stage-filename">
                       {fileMeta?.name || title || "Artwork File"}
                     </span>
                     <span className="modal-stage-filesize">
-                      {fileMeta?.size || "High-Res"} {fileMeta?.dimensions ? `· ${fileMeta.dimensions}` : ""}
+                      {fileMeta?.size || "High-Res"}{" "}
+                      {fileMeta?.dimensions ? `· ${fileMeta.dimensions}` : ""}
                     </span>
                   </div>
 
@@ -362,18 +525,20 @@ export default function SecretAdminModal({
                 </div>
 
                 {isParsing && (
-                  <div style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "rgba(0,0,0,0.75)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
-                    color: "#38bdf8",
-                    fontWeight: 700,
-                    zIndex: 10
-                  }}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "rgba(0,0,0,0.75)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 10,
+                      color: "#38bdf8",
+                      fontWeight: 700,
+                      zIndex: 10,
+                    }}
+                  >
                     <Loader2 size={24} className="animate-spin" />
                     <span>Parsing Art Stream...</span>
                   </div>
@@ -414,9 +579,9 @@ export default function SecretAdminModal({
                   onChange={(e) => setCategory(e.target.value)}
                   className="secret-input"
                 >
-                  <option value="Logos & Emblems">Logos & Emblems</option>
-                  <option value="Banners & Posters">Banners & Posters</option>
-                  <option value="Packaging & Labels">Packaging & Labels</option>
+                  <option value="Logos & Emblems">Logos &amp; Emblems</option>
+                  <option value="Banners & Posters">Banners &amp; Posters</option>
+                  <option value="Packaging & Labels">Packaging &amp; Labels</option>
                   <option value="Social Media Posts">Social Media Posts</option>
                   <option value="Brand Identity Systems">Brand Identity Systems</option>
                 </select>
@@ -449,10 +614,9 @@ export default function SecretAdminModal({
             {/* Software Tools with Live Autocomplete */}
             <div>
               <label className="secret-label">
-                Software Tools (Interactive YouTube-style Tags with Autocomplete)
+                Software Tools (Tags with Autocomplete)
               </label>
 
-              {/* Tag Chips list */}
               <div className="secret-chips-wrap">
                 {selectedTools.map((tool) => (
                   <span key={tool} className="secret-tag-chip">
@@ -470,7 +634,6 @@ export default function SecretAdminModal({
                 ))}
               </div>
 
-              {/* Tag Input with live dropdown */}
               <div style={{ position: "relative", marginTop: 8 }}>
                 <input
                   type="text"
@@ -481,7 +644,6 @@ export default function SecretAdminModal({
                   className="secret-input"
                 />
 
-                {/* Autocomplete Dropdown */}
                 {suggestions.length > 0 && (
                   <div className="secret-autocomplete-dropdown">
                     {suggestions.map((suggestion) => (
@@ -501,16 +663,42 @@ export default function SecretAdminModal({
               </div>
             </div>
 
-            {/* Submit Action */}
-            <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+            {/* Delete Confirmation Bar (Only visible inside Edit Mode when triggered) */}
+            {isEditing && confirmDelete && (
+              <div className="secret-delete-confirm-bar">
+                <span>Permanently delete &ldquo;{title || artworkToEdit?.title}&rdquo;?</span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    className="secret-delete-confirm-yes"
+                    onClick={handleConfirmDelete}
+                    disabled={isDeleting || isSaving}
+                  >
+                    {isDeleting ? "Deleting..." : "Confirm Delete"}
+                  </button>
+                  <button
+                    type="button"
+                    className="secret-cancel-btn"
+                    style={{ padding: "6px 12px", fontSize: 12 }}
+                    onClick={() => setConfirmDelete(false)}
+                    disabled={isDeleting}
+                  >
+                    Keep
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Submit & Edit-Only Delete Action Row */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
               <button
                 type="submit"
-                disabled={isSaving || isParsing}
+                disabled={isSaving || isParsing || isDeleting}
                 className="secret-publish-btn"
                 style={
                   !isEditing
                     ? { background: "#4ade80", color: "#052e16" }
-                    : {}
+                    : undefined
                 }
               >
                 <Check size={16} />
@@ -523,10 +711,23 @@ export default function SecretAdminModal({
                 </span>
               </button>
 
+              {isEditing && !confirmDelete && (
+                <button
+                  type="button"
+                  className="secret-delete-btn"
+                  disabled={isSaving || isDeleting}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 size={15} />
+                  <span>Delete Artwork</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 className="secret-cancel-btn"
                 onClick={onClose}
+                disabled={isSaving || isDeleting}
               >
                 Cancel
               </button>
