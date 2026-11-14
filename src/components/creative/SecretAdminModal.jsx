@@ -12,14 +12,9 @@ import {
   FileCode,
   FolderPlus,
   Trash2,
-  ShieldCheck,
-  LogIn,
-  LogOut,
   AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { signInWithPopup, signOut } from "firebase/auth";
-import { auth, googleProvider } from "../../firebase";
 import {
   saveArtworkPermanently,
   deleteArtworkPermanently,
@@ -32,8 +27,6 @@ export default function SecretAdminModal({
   mode = "edit",
   artworkToEdit,
   currentArtworks = [],
-  currentUser = null,
-  isOwner = false,
   onClose,
   onArtworkAdded,
   onArtworkSaved,
@@ -56,7 +49,6 @@ export default function SecretAdminModal({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [isSigningIn, setIsSigningIn] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const fileInputRef = useRef(null);
 
@@ -150,27 +142,6 @@ export default function SecretAdminModal({
     }
   };
 
-  const handleOwnerSignIn = async () => {
-    setErrorMsg("");
-    setIsSigningIn(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err) {
-      console.error("Google sign-in failed:", err);
-      setErrorMsg("Google sign-in could not complete. Please allow popups and try again.");
-    } finally {
-      setIsSigningIn(false);
-    }
-  };
-
-  const handleOwnerSignOut = async () => {
-    try {
-      await signOut(auth);
-    } catch (err) {
-      console.error("Sign out error:", err);
-    }
-  };
-
   // Process any art file (AI, PSD, SVG, PNG, JPG, WEBP)
   const processArtFile = async (file) => {
     if (!file) return;
@@ -221,8 +192,6 @@ export default function SecretAdminModal({
       return;
     }
 
-    const activeUid = isOwner && currentUser?.uid ? currentUser.uid : null;
-
     setIsSaving(true);
     try {
       if (isEditing) {
@@ -241,7 +210,6 @@ export default function SecretAdminModal({
         const result = await saveArtworkPermanently(updatedArtwork, {
           isEditing: true,
           currentList: currentArtworks,
-          uid: activeUid,
         });
 
         if (onArtworkSaved) {
@@ -278,7 +246,6 @@ export default function SecretAdminModal({
         const result = await saveArtworkPermanently(newArtwork, {
           isEditing: false,
           currentList: currentArtworks,
-          uid: activeUid,
         });
 
         if (onArtworkAdded) {
@@ -298,13 +265,10 @@ export default function SecretAdminModal({
     if (!isEditing || !artworkToEdit?.id) return;
     setErrorMsg("");
 
-    const activeUid = isOwner && currentUser?.uid ? currentUser.uid : null;
-
     setIsDeleting(true);
     try {
       const remaining = await deleteArtworkPermanently(artworkToEdit.id, {
         currentList: currentArtworks,
-        uid: activeUid,
       });
       if (onArtworkDeleted) {
         onArtworkDeleted(remaining, artworkToEdit.id);
@@ -360,65 +324,6 @@ export default function SecretAdminModal({
           </div>
 
           <form onSubmit={handleSave} className="secret-admin-form">
-            {/* Persistent Storage & Optional Cloud Sync Status */}
-            {!isOwner ? (
-              <div className="secret-auth-banner">
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 200 }}>
-                  <ShieldCheck size={16} style={{ color: "#38bdf8", flexShrink: 0 }} />
-                  <span>
-                    {currentUser && currentUser.email
-                      ? `Local Browser Storage Active (${currentUser.email} cannot write to cloud).`
-                      : "Browser Storage (IndexedDB) Active · Edits auto-save across reloads."}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="secret-auth-btn"
-                  onClick={handleOwnerSignIn}
-                  disabled={isSigningIn}
-                >
-                  {isSigningIn ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      <span>Signing in...</span>
-                    </>
-                  ) : (
-                    <>
-                      <LogIn size={14} />
-                      <span>Cloud Sync</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            ) : (
-              <div className="secret-auth-banner verified">
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <ShieldCheck size={16} style={{ color: "#4ade80", flexShrink: 0 }} />
-                  <span>Cloud &amp; Browser Sync Active · {currentUser?.email}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleOwnerSignOut}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 5,
-                    background: "none",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    color: "#cbd5e1",
-                    borderRadius: 6,
-                    padding: "4px 10px",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  <LogOut size={12} />
-                  <span>Sign Out</span>
-                </button>
-              </div>
-            )}
-
             {/* Inline Error Banner */}
             {errorMsg && (
               <div className="secret-error-banner">

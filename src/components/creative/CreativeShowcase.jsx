@@ -8,11 +8,9 @@ import {
   Eye,
   Waves,
 } from "lucide-react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, OWNER_EMAIL } from "../../firebase";
 import ArtworkModal from "./ArtworkModal";
 import SecretAdminModal from "./SecretAdminModal";
-import { subscribeToArtworks, PRESET_ARTWORKS } from "./creativeData";
+import { loadPersistedArtworks, PRESET_ARTWORKS } from "./creativeData";
 import { useTheme } from "../../context/ThemeContext";
 
 // Slide & 3D lift animation variants mirroring Portfolio.jsx
@@ -56,38 +54,25 @@ export default function CreativeShowcase() {
   const [direction, setDirection] = useState(1);
   const [selectedArtwork, setSelectedArtwork] = useState(null);
 
-  // Firebase Owner Auth State (used strictly inside secret admin modal)
-  const [currentUser, setCurrentUser] = useState(null);
-
   // Secret Admin Modal state
   const [isSecretAdminOpen, setIsSecretAdminOpen] = useState(false);
   const [adminModalMode, setAdminModalMode] = useState("edit"); // "add" or "edit"
   const [artworkToEdit, setArtworkToEdit] = useState(null);
 
-  // Subscribe to Auth state
+  // Load persisted artworks from IndexedDB on mount
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user || null);
-    });
-    return () => unsubAuth();
-  }, []);
-
-  const isOwner = Boolean(
-    currentUser &&
-      currentUser.emailVerified &&
-      currentUser.email?.toLowerCase() === OWNER_EMAIL.toLowerCase()
-  );
-
-  // Subscribe to persistent Firestore artworks + IndexedDB cache
-  useEffect(() => {
-    const unsubArtworks = subscribeToArtworks((nextList) => {
+    let active = true;
+    loadPersistedArtworks().then((nextList) => {
+      if (!active) return;
       setArtworks(nextList);
       setCurrentIndex((prev) => {
         if (!nextList.length) return 0;
         return Math.min(prev, nextList.length - 1);
       });
     });
-    return () => unsubArtworks();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const total = artworks.length;
@@ -487,8 +472,6 @@ export default function CreativeShowcase() {
         mode={adminModalMode}
         artworkToEdit={artworkToEdit}
         currentArtworks={artworks}
-        currentUser={currentUser}
-        isOwner={isOwner}
         onClose={() => {
           setIsSecretAdminOpen(false);
           setArtworkToEdit(null);
